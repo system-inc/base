@@ -1,0 +1,12 @@
+{
+    "//": "tsconfig used ONLY by TypeDoc (scripts/reference-gen) to parse foundation source. Extends the repo's own compiler settings (legacy decorators, bundler resolution) so types resolve against node_modules. Includes ALL foundation source (internal + tests) so the TS program is complete; TypeDoc's `exclude` option — not this file — controls what actually gets documented.",
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "declaration": false,
+        "declarationMap": false,
+        "sourceMap": false,
+        "incremental": false
+    },
+    "include": ["../../packages/foundation/source/**/*.ts"]
+}

@@ -1,0 +1,28 @@
+import { Inject } from '@system-inc/base-foundation/dependency-injection/decorators/Inject';
+import { Injectable } from '@system-inc/base-foundation/dependency-injection/decorators/Injectable';
+import { HttpPath } from '@system-inc/base-foundation/router/decorators/HttpPath';
+import { HttpRoute } from '@system-inc/base-foundation/router/decorators/HttpRoute';
+import { HttpService } from '@system-inc/base-foundation/router/decorators/HttpService';
+import { GreetingService } from './GreetingService';
+
+@Injectable()
+@HttpService()
+export class HelloWorldService {
+    // GreetingService is resolved from the DI container and handed to this
+    // service — the standard way handlers depend on other services. Any
+    // @Injectable() class can be injected this way.
+    constructor(
+        @Inject(GreetingService)
+        private readonly greetingService: GreetingService,
+    ) {}
+
+    @HttpRoute('GET', '/')
+    helloWorld(): Response {
+        return new Response(this.greetingService.greet());
+    }
+
+    @HttpRoute('GET', '/:name')
+    helloName(@HttpPath('name') name: string): Response {
+        return new Response(this.greetingService.greet(name));
+    }
+}

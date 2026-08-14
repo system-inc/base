@@ -1,0 +1,3 @@
+title: Modules
+description: 'Package features as reusable modules: settings, dependencies, registration modifiers, and composition.'
+order: 11

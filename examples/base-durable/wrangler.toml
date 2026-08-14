@@ -1,0 +1,32 @@
+main = "index.ts"
+compatibility_date = "2024-05-12"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["BaseDurableObject"]
+
+[observability]
+enabled = true
+
+[[rules]]
+type = "Text"
+globs = ["**/*.sql"]
+fallthrough = true
+
+[env.Development]
+name = "base-durable"
+durable_objects = { bindings = [
+    { name = "BaseDurableObject", class_name = "BaseDurableObject" },
+]}
+
+[env.Integration]
+name = "base-durable"
+durable_objects = { bindings = [
+    { name = "BaseDurableObject", class_name = "BaseDurableObject" },
+]}
+
+[env.Production]
+name = "base-durable"
+durable_objects = { bindings = [
+    { name = "BaseDurableObject", class_name = "BaseDurableObject" },
+]}

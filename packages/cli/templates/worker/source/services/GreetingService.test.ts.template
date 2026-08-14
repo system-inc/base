@@ -1,0 +1,20 @@
+import { GreetingService } from './GreetingService';
+
+// Unit test: lives next to the code it covers and runs under `npm test` (jest),
+// with no running worker required. Integration tests (which need a live worker)
+// live in the worker's `test/` folder and run via `base test`.
+describe('GreetingService', () => {
+    const service = new GreetingService();
+
+    test('greets the world by default', () => {
+        expect(service.greet()).toBe('Hello, world!');
+    });
+
+    test('greets a provided name, trimmed', () => {
+        expect(service.greet('  Ada  ')).toBe('Hello, Ada!');
+    });
+
+    test('falls back to the world for a blank name', () => {
+        expect(service.greet('   ')).toBe('Hello, world!');
+    });
+});

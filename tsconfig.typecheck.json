@@ -1,0 +1,38 @@
+{
+    // Whole-repo type check (no emit). Replaces the old `tsc -b` composite
+    // build: nothing is compiled to dist anymore — the framework packages ship
+    // source and only the CLI is bundled (packages/cli/build.mjs). (Publishing
+    // also emits per-library .d.ts via tsconfig.build.json, but that's a
+    // publish-only step feeding consumers' `types` condition, not this check.)
+    // This config exists purely to typecheck every package + the example workers
+    // in one pass. Worker-runtime purity (no Node types) is enforced separately
+    // by the per-package tsconfig.worker-check.json configs via `typecheck:worker`.
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "allowJs": true,
+        "checkJs": false,
+        "types": ["@cloudflare/workers-types/2023-07-01", "node", "jest"],
+        "paths": {
+            "@system-inc/base-common/*": ["./packages/common/source/*"],
+            "@system-inc/base-client/*": ["./packages/client/source/*"],
+            "@system-inc/base-foundation/*": ["./packages/foundation/source/*"],
+            "@system-inc/base-cli/*": ["./packages/cli/source/*"]
+        }
+    },
+    "include": [
+        "packages/common/source/**/*",
+        "packages/client/source/**/*",
+        "packages/foundation/source/**/*",
+        "packages/cli/source/**/*",
+        "packages/cli/integration/**/*",
+        "examples/**/*.ts",
+        "examples/**/*.js"
+    ],
+    "exclude": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/.tsbuild/**"
+    ]
+}

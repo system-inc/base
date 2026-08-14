@@ -1,0 +1,13 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "types": ["@cloudflare/workers-types/2023-07-01", "node", "jest"],
+        "paths": {
+            "@system-inc/base-common/*": ["packages/common/source/*"],
+            "@system-inc/base-foundation/*": ["packages/foundation/source/*"],
+            "@system-inc/base-client/*": ["packages/client/source/*"],
+            "@system-inc/base-cli/*": ["packages/cli/source/*"]
+        }
+    }
+}

@@ -1,0 +1,47 @@
+import eslint from '@eslint/js';
+import {
+    nexusJavaScriptAndTypeScriptPlugins,
+    nexusJavaScriptAndTypeScriptRules,
+} from '@system-inc/nexus/code-quality/eslint/NexusEsLintConfiguration.mjs';
+import tseslint from 'typescript-eslint';
+import {
+    baseIgnores,
+    baseJavaScriptAndTypeScriptPlugins,
+    baseJavaScriptAndTypeScriptRules,
+} from '@system-inc/base-lint/BaseRules.mjs';
+
+/**
+ * Lint rules + severities come from base-lint (the framework's own rules —
+ * decorator/type parity, no-internal-imports, ORM column checks, …) plus nexus
+ * (shared code-quality rules). Project-level overrides go in the `rules` block
+ * below — last spread wins, so you can retune severity/options without editing
+ * the rule sources.
+ */
+export default tseslint.config([
+    {
+        ignores: [
+            ...baseIgnores,
+            // (The generated per-database drizzle/ tree is ignored via
+            // baseIgnores in @system-inc/base-lint.)
+            // Project-specific ignores go here.
+        ],
+    },
+    eslint.configs.recommended,
+    tseslint.configs.recommended,
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+        plugins: {
+            ...baseJavaScriptAndTypeScriptPlugins,
+            ...nexusJavaScriptAndTypeScriptPlugins,
+        },
+        rules: {
+            ...baseJavaScriptAndTypeScriptRules,
+            ...nexusJavaScriptAndTypeScriptRules,
+        },
+    },
+]);

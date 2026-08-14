@@ -1,0 +1,59 @@
+{
+    "name": "@system-inc/base-client",
+    "version": "1.0.0",
+    "description": "RPC and HTTP error client for browsers and Cloudflare Workers",
+    "keywords": [
+        "rpc",
+        "http-client",
+        "cloudflare-workers",
+        "browser",
+        "base"
+    ],
+    "author": "System, Inc.",
+    "sideEffects": false,
+    "exports": {
+        "./*": {
+            "types": "./dist/*.d.ts",
+            "default": "./source/*.ts"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "LICENSE",
+        "NOTICE",
+        "dist",
+        "!dist/.tsbuildinfo",
+        "source",
+        "!source/**/*.test.ts",
+        "!source/**/CLAUDE.md"
+    ],
+    "scripts": {
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "build": "npm run clean && tsc -p tsconfig.build.json",
+        "prepack": "npm run build",
+        "test": "jest --config ../../jest.config.js packages/client"
+    },
+    "dependencies": {
+        "@system-inc/base-common": "1.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/system-inc/base.git",
+        "directory": "packages/client"
+    },
+    "homepage": "https://base-framework.dev",
+    "bugs": {
+        "url": "https://github.com/system-inc/base/issues"
+    },
+    "license": "Apache-2.0",
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20260604.1"
+    },
+    "type": "module",
+    "engines": {
+        "node": ">=22.12"
+    }
+}

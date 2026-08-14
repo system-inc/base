@@ -1,0 +1,25 @@
+{
+    "extends": "../tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "preserveSymlinks": true,
+        "allowJs": true,
+        "checkJs": false,
+        "types": ["@cloudflare/workers-types/2023-07-01", "node", "jest"],
+        "paths": {
+            "@system-inc/base-common/*": [
+                "../node_modules/@system-inc/base-common/source/*"
+            ],
+            "@system-inc/base-foundation/*": [
+                "../node_modules/@system-inc/base-foundation/source/*"
+            ],
+            "@system-inc/base-client/*": [
+                "../node_modules/@system-inc/base-client/source/*"
+            ],
+            "@system-inc/base-cli/*": [
+                "../node_modules/@system-inc/base-cli/source/*"
+            ]
+        }
+    },
+    "include": ["**/*.ts", "**/*.js"]
+}

@@ -1,0 +1,30 @@
+name: Configure Project
+description: |
+    Decodes the base64-encoded env.toml / test.env.toml secrets and writes
+    them back to disk where the base CLI expects them. Push the secrets
+    to your GitHub repo first with:
+        npx base workspace secrets export --repo <owner>/<repo>
+
+inputs:
+    env-toml:
+        description: 'env.toml secrets (base64-encoded payload, produced by `base workspace secrets export`).'
+        required: true
+
+    test-env-toml:
+        description: 'test.env.toml secrets (base64-encoded payload, produced by `base workspace secrets export`).'
+        required: true
+
+runs:
+    using: 'composite'
+    steps:
+        - name: Import workspace env.toml secrets
+          shell: bash
+          env:
+              ENV_TOML: ${{ inputs.env-toml }}
+          run: npm run base -- workspace secrets import --env ENV_TOML
+
+        - name: Import workspace test.env.toml secrets
+          shell: bash
+          env:
+              TEST_ENV_TOML: ${{ inputs.test-env-toml }}
+          run: npm run base -- workspace secrets import --env TEST_ENV_TOML

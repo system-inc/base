@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "target": "es2021",
+        "lib": ["es2021", "es2022.error", "dom", "dom.iterable"],
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "strict": true,
+        "strictPropertyInitialization": false,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "preserveConstEnums": true,
+        "skipLibCheck": true,
+        "incremental": true
+    },
+    "exclude": ["**/node_modules/**", "**/build/**", "**/dist/**"]
+}

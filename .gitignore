@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+.tsbuild/
+*.tsbuildinfo
+
+# Wrangler runtime state (local sqlite, caches)
+.wrangler/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+
+# CLI test scratch (belt-and-suspenders; tests default to os.tmpdir())
+.cli-test-tmp/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Per-worker / per-workspace env files — local secrets and config, never committed
+env.toml
+test.env.toml
+*.env.toml.base64
+.dev.vars
+*.pem
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Template .vscode/ inside scaffold templates needs to ship, even though
+# .vscode/ is otherwise ignored above.
+!packages/cli/templates/workspace/.vscode/
+
+# npm
+.npmrc.local
+
+# Local verdaccio registry (test harness)
+.verdaccio-storage/
+.npmrc.verdaccio
+.npmrc.github
+
+# base orm schema:introspect output — drizzle's view of the live DB, throwaway
+# reference (not consumed by the build). Re-generated on demand.
+**/database/*/drizzle/introspect/
+
+# base orm db:studio --local config — regenerated on demand
+**/database/*/drizzle/drizzle.local.config.ts

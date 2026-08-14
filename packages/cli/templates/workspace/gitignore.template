@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.tsbuildinfo
+
+# Wrangler runtime state (local sqlite, caches)
+.wrangler/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+.dev.vars
+*.pem
+*.secret.toml
+
+# Per-worker / per-workspace env files — local secrets and config, never committed
+env.toml
+test.env.toml
+*.env.toml.base64
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
+
+# npm
+.npmrc.local
+
+# base orm schema:introspect output (drizzle's view of the live DB; reference only)
+**/database/*/drizzle/introspect/
+
+# base orm db:studio --local config — regenerated on demand
+**/database/*/drizzle/drizzle.local.config.ts

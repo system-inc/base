@@ -1,0 +1,8 @@
+{
+    // Opening the repo root resolves to the whole-repo, no-emit type check.
+    // The framework ships source and only the CLI is bundled, so there is no
+    // composite project graph to build — see tsconfig.typecheck.json.
+    // (Publishing additionally emits .d.ts declarations per library via its
+    // tsconfig.build.json — for consumers' `types` condition only, not runtime.)
+    "extends": "./tsconfig.typecheck.json"
+}

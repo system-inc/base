@@ -1,0 +1,21 @@
+import { IntegrationTestEnvironment } from '@system-inc/base-foundation/test/IntegrationTestEnvironment';
+
+const client = IntegrationTestEnvironment.get().client;
+
+describe('HelloWorld', () => {
+    test('GET / returns the default greeting', async () => {
+        const response = await client.sendRequest(
+            `${client.getServerBaseUrl()}/`,
+        );
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe('Hello, world!');
+    });
+
+    test('GET /:name greets that name', async () => {
+        const response = await client.sendRequest(
+            `${client.getServerBaseUrl()}/Ada`,
+        );
+        expect(response.status).toBe(200);
+        expect(await response.text()).toBe('Hello, Ada!');
+    });
+});

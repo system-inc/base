@@ -1,0 +1,19 @@
+{
+    // Declaration emit for publishing: emits .d.ts (only) into dist/, mirroring
+    // the source tree 1:1. Consumers read these declarations through the
+    // package's `types` export condition, so their `tsc` (with `skipLibCheck`)
+    // never typechecks our source — which is what eliminated the consumer's
+    // TS1272 errors. The `default` condition still resolves to source, so
+    // bundlers and the CLI's ts-node runtime are unaffected. The sibling
+    // tsconfig.json stays noEmit for in-repo typechecking.
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "emitDeclarationOnly": true,
+        "sourceMap": false,
+        "rootDir": "./source",
+        "outDir": "./dist",
+        "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    },
+    "exclude": ["**/node_modules/**", "**/build/**", "dist", "**/*.test.ts"]
+}

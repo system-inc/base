@@ -1,0 +1,100 @@
+{
+    "name": "@system-inc/base-foundation",
+    "version": "1.0.0",
+    "description": "Core framework for Base — DI, modules, routing, ORM, GraphQL, queue, scheduled, validation",
+    "keywords": [
+        "framework",
+        "dependency-injection",
+        "graphql",
+        "orm",
+        "rpc",
+        "queue",
+        "scheduled",
+        "cloudflare-workers",
+        "typescript",
+        "base"
+    ],
+    "author": "System, Inc.",
+    "sideEffects": [
+        "./source/startup/preload.ts",
+        "./source/request/decorators/RequestContextDecorator.ts"
+    ],
+    "exports": {
+        "./*": {
+            "types": "./dist/*.d.ts",
+            "default": "./source/*.ts"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "LICENSE",
+        "NOTICE",
+        "dist",
+        "!dist/.tsbuildinfo",
+        "source",
+        "!source/**/*.test.ts",
+        "!source/**/CLAUDE.md"
+    ],
+    "scripts": {
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "build": "npm run clean && tsc -p tsconfig.build.json",
+        "prepack": "npm run build",
+        "test": "jest --config ../../jest.config.js packages/foundation"
+    },
+    "dependencies": {
+        "@envelop/core": "^5.5.1",
+        "@system-inc/base-client": "1.0.0",
+        "@system-inc/base-common": "1.0.0",
+        "smol-toml": "^1.3.0"
+    },
+    "devDependencies": {
+        "@apollo/client": "^3.11.3",
+        "@cloudflare/workers-types": "^4.20241022.0"
+    },
+    "peerDependencies": {
+        "@cloudflare/containers": "^0.1.1",
+        "@planetscale/database": "*",
+        "@system-inc/type-graphql": "^2.0.0-rc.3",
+        "@whatwg-node/server": "^0.9.19",
+        "better-sqlite3": "^9.6.0",
+        "drizzle-orm": "^0.45.0",
+        "graphql": "^16.0.0",
+        "graphql-scalars": "*",
+        "graphql-type-json": "^0.3.2",
+        "graphql-yoga": "^4.0.0",
+        "itty-router": "^5.0.0",
+        "tsyringe": "^4.8.0",
+        "ws": "^8.0.0"
+    },
+    "peerDependenciesMeta": {
+        "@cloudflare/containers": {
+            "optional": true
+        },
+        "@planetscale/database": {
+            "optional": true
+        },
+        "better-sqlite3": {
+            "optional": true
+        },
+        "ws": {
+            "optional": true
+        }
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/system-inc/base.git",
+        "directory": "packages/foundation"
+    },
+    "homepage": "https://base-framework.dev",
+    "bugs": {
+        "url": "https://github.com/system-inc/base/issues"
+    },
+    "license": "Apache-2.0",
+    "type": "module",
+    "engines": {
+        "node": ">=22.12"
+    }
+}

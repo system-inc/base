@@ -1,0 +1,34 @@
+{
+    "version": "7",
+    "dialect": "mysql",
+    "entries": [
+        {
+            "idx": 0,
+            "version": "5",
+            "when": 1760463241263,
+            "tag": "0000_melted_dust",
+            "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "5",
+            "when": 1773433780023,
+            "tag": "0001_kind_sir_ram",
+            "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "5",
+            "when": 1779998840078,
+            "tag": "0002_familiar_gamma_corps",
+            "breakpoints": true
+        },
+        {
+            "idx": 3,
+            "version": "5",
+            "when": 1782416357916,
+            "tag": "0003_naive_fenris",
+            "breakpoints": true
+        }
+    ]
+}

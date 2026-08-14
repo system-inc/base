@@ -1,0 +1,18 @@
+{
+    // Declaration emit for publishing — see packages/common/tsconfig.build.json.
+    // `paths` is cleared (overriding tsconfig.json) so `@system-inc/base-common`
+    // resolves through node_modules to its published dist/*.d.ts rather than
+    // pulling common's source into this program (which would re-emit common's
+    // declarations under this rootDir). Build order: base-common before this.
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "emitDeclarationOnly": true,
+        "sourceMap": false,
+        "rootDir": "./source",
+        "outDir": "./dist",
+        "tsBuildInfoFile": "./dist/.tsbuildinfo",
+        "paths": {}
+    },
+    "exclude": ["**/node_modules/**", "**/build/**", "dist", "**/*.test.ts"]
+}

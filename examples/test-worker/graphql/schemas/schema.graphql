@@ -1,0 +1,46 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Mutation {
+  basicMutation: Tester!
+  opContextMutation: OpContextResult!
+}
+
+type OpContextResult {
+  operationName: String!
+  operationType: String!
+  selectedFields: [String!]!
+}
+
+type Query {
+  basicQuery: Tester!
+  crossDispatcherToken: String
+  opContext: OpContextResult!
+  rcInjection: RcInjectionResult!
+  rcMiddleInjection(after: String!, before: String!): RcMiddleResult!
+  testThrow: Tester!
+  testValidation(input: TesterInput!): Tester!
+}
+
+type RcInjectionResult {
+  deviceId: String
+  requestId: String!
+}
+
+type RcMiddleResult {
+  after: String!
+  before: String!
+  rcRequestId: String!
+}
+
+type Tester {
+  age: Float!
+  name: String!
+}
+
+input TesterInput {
+  age: Float!
+  name: String!
+}

@@ -1,0 +1,14 @@
+#!/bin/sh
+# Copyright 2026 System, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Formats staged files with prettier before each commit and re-stages them.
+# Wired up via `core.hooksPath .githooks`, set by the npm `prepare` script.
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- '*.js' '*.ts' '*.mjs' '*.json' '*.md')
+if [ -z "$files" ]; then
+    exit 0
+fi
+
+printf '%s' "$files" | tr '\n' '\0' | xargs -0 npx prettier --write --ignore-unknown --log-level warn || exit 1
+printf '%s' "$files" | tr '\n' '\0' | xargs -0 git add

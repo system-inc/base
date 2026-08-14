@@ -1,0 +1,74 @@
+{
+    "name": "@system-inc/base-cli",
+    "version": "1.0.0",
+    "description": "CLI for building and running Base-powered Cloudflare Worker applications",
+    "keywords": [
+        "cli",
+        "cloudflare-workers",
+        "scaffold",
+        "wrangler",
+        "base"
+    ],
+    "author": "System, Inc.",
+    "main": "./dist/base-cli.js",
+    "bin": {
+        "base": "./dist/base-cli.js"
+    },
+    "exports": {
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "LICENSE",
+        "NOTICE",
+        "dist",
+        "templates"
+    ],
+    "scripts": {
+        "build": "npm run clean && node build.mjs",
+        "clean": "rm -rf dist *.tsbuildinfo",
+        "prepack": "npm run build",
+        "test": "jest --config ../../jest.config.js packages/cli"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20260604.1",
+        "@types/libsodium-wrappers": "^0.7.14",
+        "@types/yargs": "^17.0.24",
+        "esbuild": "^0.25.0"
+    },
+    "dependencies": {
+        "@graphql-tools/utils": "^10.0.0",
+        "@system-inc/base-client": "1.0.0",
+        "@system-inc/base-common": "1.0.0",
+        "@system-inc/base-foundation": "1.0.0",
+        "chalk": "^5.0.0",
+        "drizzle-kit": "^0.31.10",
+        "libsodium-wrappers": "^0.7.15",
+        "reflect-metadata": "^0.2.0",
+        "smol-toml": "^1.3.0",
+        "ts-node": "^10.9.1",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^5.5.2",
+        "yargs": "^17.7.2"
+    },
+    "peerDependencies": {
+        "@system-inc/type-graphql": "^2.0.0-rc.3",
+        "drizzle-orm": "^0.45.0",
+        "graphql": "^16.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "engines": {
+        "node": ">=22.12"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/system-inc/base.git",
+        "directory": "packages/cli"
+    },
+    "homepage": "https://base-framework.dev",
+    "bugs": {
+        "url": "https://github.com/system-inc/base/issues"
+    },
+    "license": "Apache-2.0"
+}

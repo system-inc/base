@@ -1,0 +1,11 @@
+import 'reflect-metadata';
+
+// Integration tests (run via `base test`, which sets TEST_WORKER_NAME) need the
+// shared IntegrationTestEnvironment — which pulls in the test client and its deps
+// (graphql-request, ws, db drivers). Load it only for those runs so a plain
+// `npm test` (unit) stays lightweight and free of integration dependencies. See
+// `@system-inc/base-foundation/test/JestSetup` for the full setup.
+if (process.env.TEST_WORKER_NAME) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('@system-inc/base-foundation/test/JestSetup');
+}

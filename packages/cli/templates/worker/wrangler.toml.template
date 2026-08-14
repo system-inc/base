@@ -1,0 +1,14 @@
+main = "index.ts"
+compatibility_date = "2024-05-12"
+
+[observability]
+enabled = true
+
+[env.Development]
+name = "{{workerName}}"
+
+[env.Staging]
+name = "{{workerName}}"
+
+[env.Production]
+name = "{{workerName}}"

@@ -1,0 +1,56 @@
+name: Integration Test
+
+# Deploys every worker in `examples/` to the Integration environment
+# and runs the worker-side integration tests against the live deploy.
+# Heavy and slow — runs on push to main and on manual dispatch only.
+#
+# Pairs with ci.yml (the hermetic phase). The two run in parallel on
+# push to main and are diagnosed independently.
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+jobs:
+    integration-test:
+        runs-on: ubuntu-latest
+
+        # Deploy targets and secrets exist only in the canonical repo —
+        # without this guard every fork gets a red run on its main branch.
+        if: github.repository_owner == 'system-inc'
+
+        # Back-to-back pushes shouldn't trample each other mid-deploy.
+        concurrency:
+            group: integration-test
+            cancel-in-progress: true
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            # Build the CLI bin so the next step's `base workspace secrets import`
+            # is callable. The clean+build in `npm run ci` doesn't apply here —
+            # we don't run the full ci flow on this job.
+            - name: Bootstrap CLI
+              run: npm run build
+
+            - name: Configure project (import env.toml secrets)
+              uses: ./.github/actions/configure-project
+              with:
+                  env-toml: ${{ secrets.ENV_TOML }}
+                  test-env-toml: ${{ secrets.TEST_ENV_TOML }}
+
+            - name: Deploy workers to Integration
+              run: npm run base -- deploy --environment Integration --all-workers
+
+            - name: Run worker integration tests
+              run: npm run base -- test --environment Integration --all-workers

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Manual re-run for when a push event gets dropped or a run needs
+  # repeating without an empty commit.
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Single entry point — mirrors `npm run ci` locally so the
+      # pipeline is reproducible from a developer machine without
+      # pushing. Order: clean → typecheck → build → lint → format:check
+      # → test → check. None of these steps require secrets, so this
+      # job runs unchanged for external fork pull requests. Deploys and
+      # live integration tests (which do need secrets) live in
+      # integration.yml, gated to push/workflow_dispatch only.
+      - name: Build, lint, test, check
+        run: npm run ci

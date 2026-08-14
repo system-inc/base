@@ -1,0 +1,40 @@
+{
+    "compilerOptions": {
+        "target": "es2021",
+        "lib": ["es2021", "dom", "dom.iterable"],
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "declaration": true,
+        "sourceMap": true,
+        "strict": true,
+        "strictPropertyInitialization": false,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        // Root config files (eslint.config.mjs, jest.config.js) are JS — allow
+        // them into the program (but don't type-check them) so typed ESLint's
+        // project service can lint them. Without this they're in no tsconfig and
+        // eslint errors: "was not found by the project service".
+        "allowJs": true,
+        "checkJs": false,
+        "preserveConstEnums": true,
+        "skipLibCheck": true,
+        "noEmit": true,
+        // Workers are bundled by Wrangler/esbuild, which transpiles each file in
+        // isolation with no cross-file type info. This makes tsc reject the
+        // constructs esbuild would mis-emit (e.g. re-exporting a type without
+        // `export type`), catching them at type-check instead of at bundle time.
+        // Safe with emitDecoratorMetadata (it doesn't elide imports) — but do NOT
+        // add verbatimModuleSyntax / `import type` for injected dependencies, or
+        // the DI/ORM/GraphQL paramtype metadata would be stripped.
+        "isolatedModules": true,
+        "types": ["@cloudflare/workers-types/2023-07-01", "node", "jest"]
+    },
+    // Cover the workers plus the root-level config/setup files (eslint.config.mjs,
+    // jest.config.js, jest.setup.ts) so they're part of a project for typed linting.
+    "include": ["workers/**/*", "*.mjs", "*.cjs", "*.js", "*.ts"],
+    "exclude": ["**/node_modules/**", "**/build/**", "**/dist/**"]
+}

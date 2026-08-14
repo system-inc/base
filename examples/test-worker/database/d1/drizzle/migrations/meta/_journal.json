@@ -1,0 +1,27 @@
+{
+    "version": "7",
+    "dialect": "sqlite",
+    "entries": [
+        {
+            "idx": 0,
+            "version": "6",
+            "when": 1760462949589,
+            "tag": "0000_crazy_phil_sheldon",
+            "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1779998873852,
+            "tag": "0001_mean_nekra",
+            "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1782416379450,
+            "tag": "0002_faulty_mongu",
+            "breakpoints": true
+        }
+    ]
+}

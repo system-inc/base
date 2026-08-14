@@ -1,0 +1,30 @@
+/** @type {import('ts-jest').JestConfigWithTsJest} */
+module.exports = {
+    preset: 'ts-jest',
+    testEnvironment: 'node',
+    verbose: true,
+    setupFilesAfterEnv: ['./jest.setup.ts'],
+    // Integration tests need framework setup (TEST_WORKER_NAME, TEST_HOST,
+    // module-test discovery) and run via `base test`. Default jest runs
+    // (`npm test`, `npx jest`) should stick to unit tests.
+    testPathIgnorePatterns: ['/node_modules/', '\\.integration\\.test\\.ts$'],
+    // The framework packages (@system-inc/base-*) ship TypeScript SOURCE, so any
+    // unit test that imports them pulls .ts files out of node_modules — which jest
+    // excludes from transformation by default. Un-ignore the framework scope so
+    // ts-jest compiles those files too; everything else in node_modules stays
+    // ignored.
+    transformIgnorePatterns: ['/node_modules/(?!@system-inc/base-)'],
+    // The tsconfig uses module: preserve + moduleResolution: bundler (so the
+    // editor/`tsc` resolve the framework packages' source via `exports`). jest
+    // runs on CommonJS, so pin ts-jest's emit to commonjs. `isolatedModules`
+    // makes ts-jest transpile-only (no type-checking) — your CI's `tsc` owns
+    // type-checking, and it avoids ts-jest's classic-`node` resolver tripping on
+    // the framework packages' `exports`-only subpaths (jest's own resolver, which
+    // honors `exports`, handles those at runtime).
+    transform: {
+        '^.+\\.tsx?$': [
+            'ts-jest',
+            { tsconfig: { module: 'commonjs', isolatedModules: true } },
+        ],
+    },
+};

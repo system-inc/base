@@ -1,0 +1,68 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run: Current Worker (Node)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/@system-inc/base-cli/dist/node-launcher.js",
+            "args": [
+                "${fileDirnameBasename}",
+                "${workspaceFolder}/workers",
+                "${file}"
+            ],
+            "env": {
+                "ENVIRONMENT": "Development",
+                "EXECUTION_MODE": "Local",
+                "PLATFORM": "Node"
+            },
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "Test: All",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                "${workspaceFolder}/node_modules/.bin/jest",
+                "--runInBand"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "Test: Current File",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                "${workspaceFolder}/node_modules/.bin/jest",
+                "--runInBand",
+                "${fileBasenameNoExtension}"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "Wrangler: Attach",
+            "type": "node",
+            "request": "attach",
+            "port": "${input:inspectPort}",
+            "cwd": "/",
+            "resolveSourceMapLocations": null,
+            "attachExistingChildren": false,
+            "autoAttachChildProcesses": false,
+            "sourceMaps": true
+        }
+    ],
+    "inputs": [
+        {
+            "id": "inspectPort",
+            "type": "promptString",
+            "description": "Inspector port to attach to (e.g., 13001 or 9229)",
+            "default": "9229"
+        }
+    ]
+}

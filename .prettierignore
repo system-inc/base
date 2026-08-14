@@ -1,0 +1,23 @@
+node_modules
+build
+dist
+coverage
+*.tsbuildinfo
+.wrangler
+package-lock.json
+package.json
+
+# The entire per-database drizzle/ tree is base-generated/managed (config,
+# schema.generated.ts, migrations, release.ts, introspect output). Don't reformat
+# any of it — notably schema.generated.ts, which `schema:check` compares
+# byte-for-byte against the raw generator output (Prettier rewrapping it = false drift).
+**/database/**/drizzle/**
+
+# Generated GraphQL output (`base graphql generate`) — SDL + optional --metadata
+# JSON. Generator-owned and byte-compared by the gql schema check; don't reformat.
+**/graphql/schemas/**
+
+# Generated API-reference artifacts (`npm run reference:generate`). Gitignored,
+# but Prettier still walks them on disk — without this, `npm run ci` fails for
+# anyone who has run the generator locally.
+scripts/reference-gen/artifacts/**

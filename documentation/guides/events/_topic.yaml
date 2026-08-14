@@ -1,0 +1,3 @@
+title: Events
+description: The in-process event bus, with decoupled listeners and immediate or deferred emission.
+order: 15

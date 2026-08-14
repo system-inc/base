@@ -1,0 +1,39 @@
+{
+    // Web-standards purity guard. Typechecks ALL worker-runtime source with only
+    // @cloudflare/workers-types (no @types/node, no jest) so any Node-ism —
+    // Buffer, process, `node:` imports — in worker code is a compile error.
+    // workerd is web-standard; the framework must not lean on Node polyfills.
+    //
+    // Genuinely-Node code is excluded (it never runs on workerd):
+    //   - *.test.ts                      : unit tests (run on Node via jest)
+    //   - foundation worker/node, web-socket/node : the Node deployment runtime
+    //   - foundation test/               : Node-only integration-test infra
+    //   - the better-sqlite adapter      : Node-only DB driver
+    //
+    // cli is NOT checked here — it's a Node program, not worker code.
+    // Run via `typecheck:worker`. No emit; this is purely a guard.
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "incremental": false,
+        "types": ["@cloudflare/workers-types/2023-07-01"],
+        "paths": {
+            "@system-inc/base-common/*": ["./packages/common/source/*"],
+            "@system-inc/base-client/*": ["./packages/client/source/*"],
+            "@system-inc/base-foundation/*": ["./packages/foundation/source/*"]
+        }
+    },
+    "include": [
+        "packages/common/source/**/*",
+        "packages/client/source/**/*",
+        "packages/foundation/source/**/*"
+    ],
+    "exclude": [
+        "**/*.test.ts",
+        "packages/foundation/source/worker/node/**",
+        "packages/foundation/source/web-socket/node/**",
+        "packages/foundation/source/test/**",
+        "packages/foundation/source/orm/database/adapter/drizzle/sqlite/BetterSQLiteAdapter.ts",
+        "packages/foundation/source/orm/database/adapter/drizzle/sqlite/BetterSQLiteProvider.ts"
+    ]
+}

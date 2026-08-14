@@ -1,0 +1,19 @@
+import { BaseSettings } from '@system-inc/base-foundation/base/BaseSettings';
+
+import { HelloWorldService } from './source/services/HelloWorldService';
+
+export const Settings: BaseSettings = {
+    name: '{{workerName}}',
+    version: '1.0.0',
+    title: '{{workerName}}',
+    server: {
+        '@default': {
+            port: {{workerPort}},
+            host: 'localhost',
+        },
+    },
+    modules: [],
+    // Self-describing classes — each class's decorator (@HttpService,
+    // @GqlResolver, @RpcService, …) declares its dispatch surface.
+    services: [HelloWorldService],
+};

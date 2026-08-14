@@ -1,0 +1,33 @@
+# Local npm registry for testing how a REAL consumer installs @system-inc/base-*.
+#
+# Usage:
+#   1. Start it (leave running in a terminal):
+#        npx verdaccio --config verdaccio.config.yaml
+#   2. Publish the packages to it (rebuilds tarballs first):
+#        npm run publish:local
+#   3. Spin up a fresh consumer wired to it + scaffold:
+#        scripts/new-consumer.sh ../base-consumer
+#
+# Anonymous publish is enabled (publish: $all) so no `npm adduser` is needed.
+# `proxy: npmjs` on the catch-all means anything NOT under @system-inc still
+# comes from the real npm registry (drizzle, graphql, the type-graphql fork, …).
+storage: ./.verdaccio-storage
+uplinks:
+    npmjs:
+        url: https://registry.npmjs.org/
+packages:
+    '@system-inc/*':
+        access: $all
+        publish: $all
+        unpublish: $all
+        # Serve locally-published base-* from storage; fall through to npmjs for
+        # other @system-inc packages the consumer needs (e.g. @system-inc/nexus).
+        proxy: npmjs
+    '**':
+        access: $all
+        publish: $all
+        proxy: npmjs
+log:
+    type: stdout
+    format: pretty
+    level: warn

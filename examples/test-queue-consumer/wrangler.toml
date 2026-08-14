@@ -1,0 +1,10 @@
+main = "index.ts"
+compatibility_date = "2024-05-12"
+
+[env.Development]
+name = "test-queue-consumer"
+queues.consumers = [{ queue = 'test-queue', max_batch_timeout = 5, max_retries = 3, max_batch_size = 10, dead_letter_queue = 'test-queue1-dlq' }]
+
+[env.Integration]
+name = "test-queue-consumer"
+queues.consumers = [{ queue = 'test-queue', max_batch_timeout = 5, max_retries = 3, max_batch_size = 10, dead_letter_queue = 'test-queue1-dlq' }]

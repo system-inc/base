@@ -1,0 +1,15 @@
+import { Injectable } from '@system-inc/base-foundation/dependency-injection/decorators/Injectable';
+
+/**
+ * A plain injectable service. Holding the worker's real logic in a service
+ * like this (rather than inline in the HTTP route) makes it (1) reusable by
+ * any handler that injects it and (2) unit-testable in isolation — see
+ * GreetingService.test.ts.
+ */
+@Injectable()
+export class GreetingService {
+    greet(name?: string): string {
+        const trimmed = name?.trim();
+        return `Hello, ${trimmed || 'world'}!`;
+    }
+}

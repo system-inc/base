@@ -1,0 +1,15 @@
+{
+    "name": "@system-inc/base-examples",
+    "version": "0.0.0",
+    "private": true,
+    "license": "Apache-2.0",
+    "description": "Example workers exercising Base packages. Each subfolder is a self-contained Cloudflare Worker runnable via `npx base develop -w <name> --workersFolder examples` from the repo root.",
+    "dependencies": {
+        "@system-inc/base-cli": "*",
+        "@system-inc/base-common": "*",
+        "@system-inc/base-foundation": "*"
+    },
+    "devDependencies": {
+        "@cloudflare/workers-types": "^4.20260604.1"
+    }
+}

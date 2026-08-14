@@ -1,0 +1,56 @@
+{
+    "name": "@system-inc/base-lint",
+    "version": "1.0.0",
+    "description": "ESLint rules for projects built on Base",
+    "keywords": [
+        "eslint",
+        "eslint-config",
+        "eslint-plugin",
+        "cloudflare-workers",
+        "base"
+    ],
+    "author": "System, Inc.",
+    "type": "module",
+    "main": "./BaseRules.mjs",
+    "exports": {
+        ".": "./BaseRules.mjs",
+        "./BaseRules.mjs": "./BaseRules.mjs",
+        "./rules/*.mjs": "./rules/*.mjs"
+    },
+    "files": [
+        "LICENSE",
+        "NOTICE",
+        "BaseRules.mjs",
+        "rules"
+    ],
+    "scripts": {
+        "build": "echo \"@system-inc/base-lint is pure ESM, no build step\"",
+        "test": "echo \"no tests yet\""
+    },
+    "dependencies": {
+        "eslint-plugin-unused-imports": "^4.4.1"
+    },
+    "peerDependencies": {
+        "@system-inc/nexus": ">=1",
+        "@typescript-eslint/utils": ">=8",
+        "eslint": ">=9",
+        "typescript": ">=5",
+        "typescript-eslint": ">=8"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "engines": {
+        "node": ">=22.12"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/system-inc/base.git",
+        "directory": "packages/lint"
+    },
+    "homepage": "https://base-framework.dev",
+    "bugs": {
+        "url": "https://github.com/system-inc/base/issues"
+    },
+    "license": "Apache-2.0"
+}

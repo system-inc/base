@@ -1,0 +1,1 @@
+ALTER TABLE `orm_product_categories` MODIFY COLUMN `categoryId` int unsigned NOT NULL;

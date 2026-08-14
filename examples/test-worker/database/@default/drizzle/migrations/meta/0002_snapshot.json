@@ -1,0 +1,1009 @@
+{
+    "version": "5",
+    "dialect": "mysql",
+    "id": "73673abf-5c4a-4702-8e35-d28eb755bcf1",
+    "prevId": "9d5606f2-2344-422b-bde0-f934118541a3",
+    "tables": {
+        "orm_articles": {
+            "name": "orm_articles",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "title": {
+                    "name": "title",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "writer_id": {
+                    "name": "writer_id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_articles_id": {
+                    "name": "orm_articles_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_authors": {
+            "name": "orm_authors",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "varchar(100)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "email": {
+                    "name": "email",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "code": {
+                    "name": "code",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_authors_id": {
+                    "name": "orm_authors_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {
+                "orm_authors_email_unique": {
+                    "name": "orm_authors_email_unique",
+                    "columns": ["email"]
+                },
+                "orm_authors_code_unique": {
+                    "name": "orm_authors_code_unique",
+                    "columns": ["code"]
+                }
+            },
+            "checkConstraint": {}
+        },
+        "orm_book_genre_mapping": {
+            "name": "orm_book_genre_mapping",
+            "columns": {
+                "book_id": {
+                    "name": "book_id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "genre_id": {
+                    "name": "genre_id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_book_genre_mapping_book_id_genre_id_pk": {
+                    "name": "orm_book_genre_mapping_book_id_genre_id_pk",
+                    "columns": ["book_id", "genre_id"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_books": {
+            "name": "orm_books",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "title": {
+                    "name": "title",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "isbn": {
+                    "name": "isbn",
+                    "type": "varchar(13)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "pages": {
+                    "name": "pages",
+                    "type": "int",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_books_id": {
+                    "name": "orm_books_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {
+                "orm_books_isbn_unique": {
+                    "name": "orm_books_isbn_unique",
+                    "columns": ["isbn"]
+                }
+            },
+            "checkConstraint": {}
+        },
+        "orm_categories": {
+            "name": "orm_categories",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "int unsigned",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": true
+                },
+                "name": {
+                    "name": "name",
+                    "type": "varchar(100)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "slug": {
+                    "name": "slug",
+                    "type": "varchar(100)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "parentId": {
+                    "name": "parentId",
+                    "type": "int",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "sortOrder": {
+                    "name": "sortOrder",
+                    "type": "int",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "isVisible": {
+                    "name": "isVisible",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": true
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_categories_id": {
+                    "name": "orm_categories_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {
+                "orm_categories_name_unique": {
+                    "name": "orm_categories_name_unique",
+                    "columns": ["name"]
+                },
+                "orm_categories_slug_unique": {
+                    "name": "orm_categories_slug_unique",
+                    "columns": ["slug"]
+                }
+            },
+            "checkConstraint": {}
+        },
+        "orm_comment_entity": {
+            "name": "orm_comment_entity",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "authorId": {
+                    "name": "authorId",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "postId": {
+                    "name": "postId",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_comment_entity_id": {
+                    "name": "orm_comment_entity_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_composite_entity": {
+            "name": "orm_composite_entity",
+            "columns": {
+                "userId": {
+                    "name": "userId",
+                    "type": "varchar(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "projectId": {
+                    "name": "projectId",
+                    "type": "varchar(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "role": {
+                    "name": "role",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "assignedAt": {
+                    "name": "assignedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_composite_entity_userId_projectId_pk": {
+                    "name": "orm_composite_entity_userId_projectId_pk",
+                    "columns": ["userId", "projectId"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_genres": {
+            "name": "orm_genres",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "varchar(100)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "description": {
+                    "name": "description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_genres_id": {
+                    "name": "orm_genres_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {
+                "orm_genres_name_unique": {
+                    "name": "orm_genres_name_unique",
+                    "columns": ["name"]
+                }
+            },
+            "checkConstraint": {}
+        },
+        "orm_orders": {
+            "name": "orm_orders",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "int unsigned",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": true
+                },
+                "orderNumber": {
+                    "name": "orderNumber",
+                    "type": "varchar(20)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "customerId": {
+                    "name": "customerId",
+                    "type": "int",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "status": {
+                    "name": "status",
+                    "type": "varchar(20)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'pending'"
+                },
+                "subtotal": {
+                    "name": "subtotal",
+                    "type": "decimal(10,2)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "tax": {
+                    "name": "tax",
+                    "type": "decimal(10,2)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 8.5
+                },
+                "shipping": {
+                    "name": "shipping",
+                    "type": "decimal(10,2)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 12
+                },
+                "total": {
+                    "name": "total",
+                    "type": "decimal(10,2)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "currency": {
+                    "name": "currency",
+                    "type": "varchar(10)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'USD'"
+                },
+                "metadata": {
+                    "name": "metadata",
+                    "type": "json",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "orderDate": {
+                    "name": "orderDate",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "shippedDate": {
+                    "name": "shippedDate",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "deliveredDate": {
+                    "name": "deliveredDate",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_order_date": {
+                    "name": "idx_order_date",
+                    "columns": ["orderDate"],
+                    "isUnique": false
+                },
+                "idx_customer_status": {
+                    "name": "idx_customer_status",
+                    "columns": ["customerId", "status"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_orders_id": {
+                    "name": "orm_orders_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {
+                "orm_orders_orderNumber_unique": {
+                    "name": "orm_orders_orderNumber_unique",
+                    "columns": ["orderNumber"]
+                }
+            },
+            "checkConstraint": {}
+        },
+        "orm_post_entity": {
+            "name": "orm_post_entity",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "title": {
+                    "name": "title",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "authorId": {
+                    "name": "authorId",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_post_entity_id": {
+                    "name": "orm_post_entity_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_product_categories": {
+            "name": "orm_product_categories",
+            "columns": {
+                "categoryId": {
+                    "name": "categoryId",
+                    "type": "int unsigned",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "productId": {
+                    "name": "productId",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_product_categories_categoryId_productId_pk": {
+                    "name": "orm_product_categories_categoryId_productId_pk",
+                    "columns": ["categoryId", "productId"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_product_tags": {
+            "name": "orm_product_tags",
+            "columns": {
+                "productId": {
+                    "name": "productId",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "tagId": {
+                    "name": "tagId",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_product_tags_productId_tagId_pk": {
+                    "name": "orm_product_tags_productId_tagId_pk",
+                    "columns": ["productId", "tagId"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_products": {
+            "name": "orm_products",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "varchar(100)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "sku": {
+                    "name": "sku",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "vendorCode": {
+                    "name": "vendorCode",
+                    "type": "varchar(20)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "description": {
+                    "name": "description",
+                    "type": "varchar(512)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'No description available'"
+                },
+                "price": {
+                    "name": "price",
+                    "type": "decimal(10,2)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 99.99
+                },
+                "stockQuantity": {
+                    "name": "stockQuantity",
+                    "type": "int",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 10
+                },
+                "isActive": {
+                    "name": "isActive",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": true
+                },
+                "status": {
+                    "name": "status",
+                    "type": "varchar(20)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'draft'"
+                },
+                "weight": {
+                    "name": "weight",
+                    "type": "float",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "specifications": {
+                    "name": "specifications",
+                    "type": "json",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "publishedAt": {
+                    "name": "publishedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx_price_status": {
+                    "name": "idx_price_status",
+                    "columns": ["price", "status"],
+                    "isUnique": false
+                },
+                "idx_sku": {
+                    "name": "idx_sku",
+                    "columns": ["sku"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_products_id": {
+                    "name": "orm_products_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {
+                "orm_products_sku_unique": {
+                    "name": "orm_products_sku_unique",
+                    "columns": ["sku"]
+                },
+                "uq_sku_vendor": {
+                    "name": "uq_sku_vendor",
+                    "columns": ["sku", "vendorCode"]
+                }
+            },
+            "checkConstraint": {}
+        },
+        "orm_tags": {
+            "name": "orm_tags",
+            "columns": {
+                "name": {
+                    "name": "name",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "color": {
+                    "name": "color",
+                    "type": "varchar(7)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'#000000'"
+                },
+                "usageCount": {
+                    "name": "usageCount",
+                    "type": "int",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_tags_name": {
+                    "name": "orm_tags_name",
+                    "columns": ["name"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_test_entity": {
+            "name": "orm_test_entity",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "age": {
+                    "name": "age",
+                    "type": "int",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "email": {
+                    "name": "email",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "status": {
+                    "name": "status",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_test_entity_id": {
+                    "name": "orm_test_entity_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        },
+        "orm_user_entity": {
+            "name": "orm_user_entity",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "char(36)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "username": {
+                    "name": "username",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "email": {
+                    "name": "email",
+                    "type": "varchar(255)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "createdAt": {
+                    "name": "createdAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "updatedAt": {
+                    "name": "updatedAt",
+                    "type": "datetime(6)",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "orm_user_entity_id": {
+                    "name": "orm_user_entity_id",
+                    "columns": ["id"]
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraint": {}
+        }
+    },
+    "views": {},
+    "_meta": {
+        "schemas": {},
+        "tables": {},
+        "columns": {}
+    },
+    "internal": {
+        "tables": {},
+        "indexes": {}
+    }
+}

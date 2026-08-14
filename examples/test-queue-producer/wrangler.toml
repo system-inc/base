@@ -1,0 +1,12 @@
+main = "index.ts"
+compatibility_date = "2024-05-12"
+
+[env.Development]
+name = "test-queue-producer"
+queues.producers = [{ queue = 'test-queue', binding = 'TEST_QUEUE' }]
+# queues.consumers = [{ queue = 'test-queue', max_batch_timeout=0 }]
+
+[env.Integration]
+name = "test-queue-producer"
+queues.producers = [{ queue = 'test-queue', binding = 'TEST_QUEUE' }]
+queues.consumers = [{ queue = 'test-queue', max_batch_timeout=0 }]

@@ -1,0 +1,48 @@
+name: Deploy Production
+
+# Promotes the workers to Production. Gated by a successful Integration
+# Test run — if integration tests fail on a push to main, production
+# deploy doesn't fire.
+#
+# Also available via manual dispatch for hotfix paths (use with care).
+
+on:
+    workflow_run:
+        workflows: ['Integration Test']
+        types: [completed]
+        branches: [main]
+    workflow_dispatch:
+
+jobs:
+    deploy-production:
+        runs-on: ubuntu-latest
+
+        # Only deploy when the upstream workflow actually succeeded.
+        # workflow_run fires on any completion (success, failure,
+        # cancelled) so we have to filter explicitly.
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+        concurrency:
+            group: deploy-production
+            cancel-in-progress: true
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Configure project (import env.toml secrets)
+              uses: ./.github/actions/configure-project
+              with:
+                  env-toml: ${{ secrets.ENV_TOML }}
+                  test-env-toml: ${{ secrets.TEST_ENV_TOML }}
+
+            - name: Deploy workers to Production
+              run: npm run base -- deploy --environment Production --all-workers

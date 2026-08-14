@@ -1,0 +1,50 @@
+# {{workspaceName}}
+
+Cloudflare Workers workspace built on [`@system-inc/base-foundation`](https://github.com/system-inc/base).
+
+Workers live under `./workers/<name>/`. Each is independently deployable.
+
+## Develop
+
+```bash
+npm install
+npm run base -- develop {{workerName}}   # start the dev server
+```
+
+Or from inside a worker folder:
+
+```bash
+cd workers/{{workerName}} && npx base develop
+```
+
+## Test
+
+```bash
+npm test                          # unit tests (plain jest)
+npm test -- path/to/file          # filter jest by path
+npm test -- -t "test name"        # filter by describe/it name
+
+npm run test:integration          # integration tests for every worker
+npx base test {{workerName}}      # integration tests for one worker
+```
+
+Integration tests need a running worker (`npm run base -- develop {{workerName}}` in another shell). The `base test` command sets up `TEST_WORKER_NAME` and `TEST_HOST` from the worker's `settings.ts`.
+
+## Deploy
+
+```bash
+npm run base -- deploy {{workerName}} -e Production
+npm run base -- deploy --all-workers -e Production   # deploy everything
+```
+
+## Add another worker
+
+```bash
+npx base worker create my-new-worker
+```
+
+## CLI reference
+
+```bash
+npx base --help
+```
