@@ -8,8 +8,10 @@ import { OrmFindOptionsMany } from '../../interfaces/find/OrmFindOptionsMany';
 import { OrmFindOptionsWhere } from '../../interfaces/find/OrmFindOptionsWhere';
 import { OrmTimeSeriesOptions } from '../../interfaces/find/OrmTimeSeriesOptions';
 import { OrmBatchOperation } from '../../interfaces/OrmBatchOperation';
+import { OrmDeleteOptions } from '../../interfaces/OrmDeleteOptions';
 import { OrmPartialEntity } from '../../interfaces/OrmPartialEntity';
 import { OrmRawData } from '../../interfaces/OrmRawData';
+import { OrmUpdateOptions } from '../../interfaces/OrmUpdateOptions';
 import { OrmBatchResult } from '../../interfaces/result/OrmBatchResult';
 import { OrmDeleteResult } from '../../interfaces/result/OrmDeleteResult';
 import { OrmInsertResult } from '../../interfaces/result/OrmInsertResult';
@@ -92,6 +94,7 @@ export interface OrmAdapter {
         metadata: OrmTableMetadata,
         conditions: OrmFindOptionsWhere<EntityType>,
         values: OrmPartialEntity<EntityType>,
+        options?: OrmUpdateOptions<EntityType>,
     ): Promise<OrmUpdateResult<EntityType>>;
 
     updateBatch<EntityType extends object>(
@@ -135,6 +138,7 @@ export interface OrmAdapter {
     delete<EntityType extends object>(
         metadata: OrmTableMetadata,
         conditions: OrmFindOptionsWhere<EntityType>,
+        options?: OrmDeleteOptions<EntityType>,
     ): Promise<OrmDeleteResult<EntityType>>;
 
     deleteBatch<EntityType extends object>(

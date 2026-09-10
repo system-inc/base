@@ -13,11 +13,13 @@ import { OrmFindOptionsMany } from '../../interfaces/find/OrmFindOptionsMany';
 import { OrmFindOptionsWhere } from '../../interfaces/find/OrmFindOptionsWhere';
 import { OrmTimeSeriesOptions } from '../../interfaces/find/OrmTimeSeriesOptions';
 import { OrmBatchOperation } from '../../interfaces/OrmBatchOperation';
+import { OrmDeleteOptions } from '../../interfaces/OrmDeleteOptions';
 import {
     OrmEntityKey,
     OrmPartialEntity,
 } from '../../interfaces/OrmPartialEntity';
 import { OrmRawData } from '../../interfaces/OrmRawData';
+import { OrmUpdateOptions } from '../../interfaces/OrmUpdateOptions';
 import { OrmBatchResult } from '../../interfaces/result/OrmBatchResult';
 import { OrmDeleteResult } from '../../interfaces/result/OrmDeleteResult';
 import { OrmInsertResult } from '../../interfaces/result/OrmInsertResult';
@@ -68,6 +70,28 @@ function assertScopedConditions(conditions: object, verb: string): void {
                 (verb === 'delete'
                     ? ', or use truncate({ confirm: true }) on a truncatable table to clear all rows.'
                     : '.'),
+        );
+    }
+}
+
+/**
+ * A `limit` on a conditions-based write must be a positive integer: zero
+ * would be a silent no-op and a fraction or negative is a caller bug, so
+ * both fail loudly here instead of reaching the driver (which would
+ * accept, coerce, or reject them differently per dialect).
+ */
+function assertWriteLimit(
+    options: { limit?: number } | undefined,
+    verb: string,
+): void {
+    const limit = options?.limit;
+    if (limit === undefined) {
+        return;
+    }
+    if (!Number.isInteger(limit) || limit < 1) {
+        throw new Error(
+            `Refusing to ${verb} with limit ${String(limit)} — limit must be ` +
+                'a positive integer, or omitted to affect every matching row.',
         );
     }
 }
@@ -355,8 +379,10 @@ export class OrmDatabaseImpl<
         target: Constructor<EntityType>,
         conditions: OrmFindOptionsWhere<EntityType>,
         values: OrmPartialEntity<EntityType>,
+        options?: OrmUpdateOptions<EntityType>,
     ): Promise<OrmUpdateResult<EntityType>> {
         assertScopedConditions(conditions, 'update');
+        assertWriteLimit(options, 'update');
         const adapter = await this.getAdapter();
         const metadata = this.requireOwnEntity(target);
         this.assertWritableColumns(metadata, values);
@@ -364,6 +390,7 @@ export class OrmDatabaseImpl<
             metadata,
             conditions,
             this.withUpdateDates(metadata, values),
+            options,
         );
     }
 
@@ -526,11 +553,13 @@ export class OrmDatabaseImpl<
     async delete<EntityType extends OrmTrackingEntity>(
         target: Constructor<EntityType>,
         conditions: OrmFindOptionsWhere<EntityType>,
+        options?: OrmDeleteOptions<EntityType>,
     ): Promise<OrmDeleteResult<EntityType>> {
         assertScopedConditions(conditions, 'delete');
+        assertWriteLimit(options, 'delete');
         const adapter = await this.getAdapter();
         const metadata = this.requireOwnEntity(target);
-        return adapter.delete(metadata, conditions);
+        return adapter.delete(metadata, conditions, options);
     }
 
     async deleteBatch<EntityType extends OrmTrackingEntity>(

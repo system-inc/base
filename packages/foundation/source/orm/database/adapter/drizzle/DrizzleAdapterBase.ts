@@ -45,6 +45,7 @@ import {
 } from '../../../interfaces/find/OrmMappedJoin';
 import { OrmTimeSeriesOptions } from '../../../interfaces/find/OrmTimeSeriesOptions';
 import { OrmBatchOperation } from '../../../interfaces/OrmBatchOperation';
+import { OrmDeleteOptions } from '../../../interfaces/OrmDeleteOptions';
 import { OrmPartialEntity } from '../../../interfaces/OrmPartialEntity';
 import { OrmRawData } from '../../../interfaces/OrmRawData';
 import { OrmBatchResult } from '../../../interfaces/result/OrmBatchResult';
@@ -52,6 +53,7 @@ import { OrmDeleteResult } from '../../../interfaces/result/OrmDeleteResult';
 import { OrmInsertResult } from '../../../interfaces/result/OrmInsertResult';
 import { OrmTimeSeriesResult } from '../../../interfaces/result/OrmTimeSeriesResult';
 import { OrmUpdateResult } from '../../../interfaces/result/OrmUpdateResult';
+import { OrmUpdateOptions } from '../../../interfaces/OrmUpdateOptions';
 import { OrmRelationMetadata } from '../../../metadata/OrmRelationMetadata';
 import {
     ormGetTable,
@@ -270,6 +272,7 @@ export abstract class DrizzleAdapterBase implements OrmAdapter {
         metadata: OrmTableMetadata,
         conditions: OrmFindOptionsWhere<EntityType>,
         values: OrmPartialEntity<EntityType>,
+        options?: OrmUpdateOptions<EntityType>,
     ): Promise<OrmUpdateResult<EntityType>> {
         const table = this.schema[metadata.name];
         if (!table) {
@@ -281,7 +284,7 @@ export abstract class DrizzleAdapterBase implements OrmAdapter {
             return { affectedRows: 0, raw: null };
         }
 
-        const result: any = await this.db
+        const query = this.db
             .update(table)
             .set(values)
             .where(
@@ -289,6 +292,11 @@ export abstract class DrizzleAdapterBase implements OrmAdapter {
                     ? whereConditions[0]
                     : and(...whereConditions)!,
             );
+        const result: any = await this.applyOrderAndLimit(
+            query,
+            table,
+            options,
+        );
 
         return this.convertUpdateResult([result]);
     }
@@ -599,6 +607,7 @@ export abstract class DrizzleAdapterBase implements OrmAdapter {
     async delete<EntityType extends object>(
         metadata: OrmTableMetadata,
         conditions: OrmFindOptionsWhere<EntityType>,
+        options?: OrmDeleteOptions<EntityType>,
     ): Promise<OrmDeleteResult<EntityType>> {
         const table = this.schema[metadata.name];
         if (!table) {
@@ -610,15 +619,43 @@ export abstract class DrizzleAdapterBase implements OrmAdapter {
             return { affectedRows: 0, raw: null };
         }
 
-        const result: any = await this.db
+        const query = this.db
             .delete(table)
             .where(
                 whereConditions.length === 1
                     ? whereConditions[0]
                     : and(...whereConditions)!,
             );
+        const result: any = await this.applyOrderAndLimit(
+            query,
+            table,
+            options,
+        );
 
         return this.convertDeleteResult(result);
+    }
+
+    /**
+     * Appends `ORDER BY` / `LIMIT` to a conditions-based update or delete.
+     * Both dialects Base ships accept the clauses on DML: MySQL natively,
+     * SQLite when compiled with `SQLITE_ENABLE_UPDATE_DELETE_LIMIT` (which
+     * Durable Objects, D1, and better-sqlite3 all are).
+     */
+    private applyOrderAndLimit(
+        query: any,
+        table: object,
+        options: { limit?: number; order?: object } | undefined,
+    ): any {
+        let bounded = query;
+        if (options?.order) {
+            bounded = bounded.orderBy(
+                ...this.buildOrderConditions(table, options.order),
+            );
+        }
+        if (options?.limit !== undefined) {
+            bounded = bounded.limit(options.limit);
+        }
+        return bounded;
     }
 
     async truncate<EntityType extends object>(
@@ -813,23 +850,27 @@ export abstract class DrizzleAdapterBase implements OrmAdapter {
             if (!this.schema[metadata.name]) {
                 throw new Error(`Table '${metadata.name}' not found in schema`);
             }
-            queryOptions.orderBy = (table: DrizzleTableLike) => {
-                const orderConditions: SQL[] = [];
-                for (const [key, direction] of Object.entries(options.order!)) {
-                    const column = this.resolveColumnOrThrow(
-                        table,
-                        key,
-                        'order by',
-                    );
-                    orderConditions.push(
-                        direction === 'DESC' ? desc(column) : asc(column),
-                    );
-                }
-                return orderConditions;
-            };
+            queryOptions.orderBy = (table: DrizzleTableLike) =>
+                this.buildOrderConditions(table, options.order!);
         }
 
         return queryOptions;
+    }
+
+    /**
+     * Translates an `order` map (`{ createdAt: 'ASC' }`) into Drizzle
+     * `asc()`/`desc()` terms, resolving each key against the table and
+     * throwing on an unknown column.
+     */
+    protected buildOrderConditions(table: object, order: object): SQL[] {
+        const orderConditions: SQL[] = [];
+        for (const [key, direction] of Object.entries(order)) {
+            const column = this.resolveColumnOrThrow(table, key, 'order by');
+            orderConditions.push(
+                direction === 'DESC' ? desc(column) : asc(column),
+            );
+        }
+        return orderConditions;
     }
 
     protected buildWithClause(
