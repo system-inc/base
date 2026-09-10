@@ -11,6 +11,10 @@ on:
 
 jobs:
   build:
+    # Reported to branch protection under this name; main's required
+    # status check is "CI", and GitHub matches on the job name, not the
+    # workflow name above.
+    name: CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
