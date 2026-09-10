@@ -1,6 +1,6 @@
 {
     "name": "@system-inc/base-client",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "RPC and HTTP error client for browsers and Cloudflare Workers",
     "keywords": [
         "rpc",
@@ -34,7 +34,7 @@
         "test": "jest --config ../../jest.config.js packages/client"
     },
     "dependencies": {
-        "@system-inc/base-common": "1.0.0"
+        "@system-inc/base-common": "1.1.0"
     },
     "publishConfig": {
         "access": "public"
