@@ -44,6 +44,32 @@ await this.users.upsert(user); // insert, or update on conflict
 await this.users.delete(user);
 ```
 
+## Bulk writes by condition
+
+`OrmDatabase.update` and `OrmDatabase.delete` also take a `where`-style conditions object instead of an entity, for sweeps like retention:
+
+```ts
+await this.db.delete(LogEntity, { createdAt: lt(cutoff) });
+```
+
+Hosted MySQL (PlanetScale) aborts any single statement that touches more than 100,000 rows, and even under that cap a wide delete holds locks and replication for its whole duration. Bound each statement with `limit` and loop until a batch comes back short:
+
+```ts
+const batchSize = 10_000;
+let affectedRows: number | undefined;
+do {
+    ({ affectedRows } = await this.db.delete(
+        LogEntity,
+        { createdAt: lt(cutoff) },
+        { limit: batchSize, order: { createdAt: 'ASC' } },
+    ));
+} while (affectedRows === batchSize);
+```
+
+`order` picks which matching rows go first (oldest, here); without `limit` it has no effect. The same options work on `update`. Every Base backend accepts them: MySQL natively, and Durable Object, D1, and better-sqlite3 SQLite are all compiled with `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`.
+
+Empty conditions are refused (that would address every row); clear a table with `truncate` instead.
+
 ## Batch writes
 
 `writeBatch` groups multiple operations into one round trip — valuable on D1, where each statement is a network hop. See the reference for `OrmBatchOperation`.
@@ -52,4 +78,5 @@ await this.users.delete(user);
 
 - **Create = `Entity.from({...})` + `insert`.** `from` builds a tracked instance; a plain object literal won't do.
 - **`update` requires a loaded (tracked) entity**: that's where the changed-field list comes from.
+- **Bulk deletes and updates loop with `{ limit }`**: PlanetScale caps one statement at 100k rows, so a retention sweep batches until a short result.
 - **`truncate`** exists for tables declared `@OrmTable(name, { truncatable: true })` — a deliberate opt-in, mostly for tests.

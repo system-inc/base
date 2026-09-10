@@ -10,8 +10,10 @@ import { OrmFindOptions } from '../interfaces/find/OrmFindOptions';
 import { OrmFindOptionsMany } from '../interfaces/find/OrmFindOptionsMany';
 import { OrmFindOptionsWhere } from '../interfaces/find/OrmFindOptionsWhere';
 import { OrmTimeSeriesOptions } from '../interfaces/find/OrmTimeSeriesOptions';
+import { OrmDeleteOptions } from '../interfaces/OrmDeleteOptions';
 import { OrmEntityKey, OrmPartialEntity } from '../interfaces/OrmPartialEntity';
 import { OrmRawData } from '../interfaces/OrmRawData';
+import { OrmUpdateOptions } from '../interfaces/OrmUpdateOptions';
 import { OrmBatchResult } from '../interfaces/result/OrmBatchResult';
 import { OrmDeleteResult } from '../interfaces/result/OrmDeleteResult';
 import { OrmInsertResult } from '../interfaces/result/OrmInsertResult';
@@ -107,10 +109,16 @@ export interface OrmDatabase {
         values: ReadonlyArray<OrmPartialEntity<EntityType>>,
     ): Promise<OrmInsertResult<EntityType>>;
 
+    /**
+     * Updates every row matching `conditions`, or at most `options.limit`
+     * of them (in `options.order`) when batching a wide sweep — see
+     * `OrmUpdateOptions`. Empty conditions are refused.
+     */
     update<EntityType extends OrmTrackingEntity>(
         target: Constructor<EntityType>,
         conditions: OrmFindOptionsWhere<EntityType>,
         values: OrmPartialEntity<EntityType>,
+        options?: OrmUpdateOptions<EntityType>,
     ): Promise<OrmUpdateResult<EntityType>>;
 
     updateBatch<EntityType extends OrmTrackingEntity>(
@@ -144,9 +152,16 @@ export interface OrmDatabase {
         build: (batch: OrmDatabaseBatch) => void,
     ): Promise<OrmBatchResult>;
 
+    /**
+     * Deletes every row matching `conditions`, or at most `options.limit`
+     * of them (in `options.order`) when batching a bulk delete — see
+     * `OrmDeleteOptions` for the loop shape. Empty conditions are refused;
+     * use `truncate` to clear a table.
+     */
     delete<EntityType extends OrmTrackingEntity>(
         target: Constructor<EntityType>,
         conditions: OrmFindOptionsWhere<EntityType>,
+        options?: OrmDeleteOptions<EntityType>,
     ): Promise<OrmDeleteResult<EntityType>>;
 
     deleteBatch<EntityType extends OrmTrackingEntity>(

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **ORM: `limit` and `order` on conditions-based `update` and `delete`**
+  (`OrmUpdateOptions` / `OrmDeleteOptions`). Bounds a bulk write to a slice
+  of the matching rows so retention sweeps and backfills can batch — hosted
+  MySQL (PlanetScale) aborts a single statement past 100,000 rows. Works on
+  every backend: MySQL natively, SQLite (Durable Objects, D1, better-sqlite3)
+  via `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`. A non-positive or non-integer
+  `limit` is rejected before reaching the driver.
+
 ## [1.0.0] - 2026-08-14
 
 Initial public release. All five packages publish together at 1.0.0:
