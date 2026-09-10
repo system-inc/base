@@ -1,6 +1,6 @@
 {
     "name": "@system-inc/base-cli",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "CLI for building and running Base-powered Cloudflare Worker applications",
     "keywords": [
         "cli",
@@ -37,9 +37,9 @@
     },
     "dependencies": {
         "@graphql-tools/utils": "^10.0.0",
-        "@system-inc/base-client": "1.0.0",
-        "@system-inc/base-common": "1.0.0",
-        "@system-inc/base-foundation": "1.0.0",
+        "@system-inc/base-client": "1.1.0",
+        "@system-inc/base-common": "1.1.0",
+        "@system-inc/base-foundation": "1.1.0",
         "chalk": "^5.0.0",
         "drizzle-kit": "^0.31.10",
         "libsodium-wrappers": "^0.7.15",

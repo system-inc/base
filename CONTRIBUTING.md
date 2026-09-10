@@ -85,6 +85,8 @@ Write tests that exercise real behavior and edge cases. Don't test what the type
 4. Open a pull request against `main` with a clear description of the change and its motivation.
 5. CI must pass. A maintainer will review and merge.
 
+If your change is user-visible, add a line under `## [Unreleased]` in [`CHANGELOG.md`](./CHANGELOG.md) as part of the same pull request. Don't bump package versions: maintainers cut releases separately, moving the Unreleased entries under a dated version heading and publishing all five packages in lockstep (see [`scripts/README.md`](./scripts/README.md)).
+
 If you're planning a large or architectural change, please open an issue to discuss it first so we can agree on the approach before you invest the time.
 
 ## Code of conduct
