@@ -10,6 +10,7 @@ import { gqlBuildSchema } from '../GqlBuildSchema';
 import { gqlMaskError } from '../GqlMaskError';
 import { GqlServer } from '../GqlServer';
 import { GqlServerProvider } from '../GqlServerProvider';
+import { gqlYogaLogger } from '../GqlYogaLogger';
 
 /**
  * An implementation of the GqlServerProvider using GraphQL Yoga.
@@ -40,6 +41,10 @@ export class GraphQLYoga implements GqlServerProvider {
                 maskError: gqlMaskError.bind(this),
             },
             graphiql: config.graphiql,
+            // Yoga's own output goes through the framework Logger, with its
+            // error channel demoted: it fires for every resolver error, 4xx
+            // included, while gqlMaskError already logs the masked 5xx ones.
+            logging: gqlYogaLogger,
             landingPage: false,
             plugins: plugins,
             // Disable Yoga's built-in CORS handling. Yoga's default reflects

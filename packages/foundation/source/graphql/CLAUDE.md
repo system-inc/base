@@ -45,6 +45,7 @@ type-graphql wrappers renamed to Base's `Gql*` convention, plus Base extensions:
 
 - builds the schema via `gqlBuildSchema`, then `printSchema` + `createResolversMap` into a yoga `createSchema`/`createYoga`;
 - masks errors through `gqlMaskError`;
+- routes Yoga's own logging through the framework `Logger` (`gqlYogaLogger`, category `gql`) with Yoga's error channel demoted to debug — Yoga calls it for every resolver error the mask function replaced, 4xx included, and `gqlMaskError` already logs the masked 5xx ones at error level;
 - gates GraphiQL on `config.graphiql`;
 - adds `NoSchemaIntrospectionCustomRule` when `config.introspection` is off;
 - **sets `cors: false`** — Yoga's default CORS reflects any Origin with credentials (the textbook credentialed-CORS misconfiguration); `BaseRouter` wraps the handler and applies its own allowlist instead, so Yoga's headers are suppressed to avoid winning over the router's.

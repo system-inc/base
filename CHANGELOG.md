@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **GraphQL: Yoga's own logging goes through the framework `Logger`** under
+  the `gql` category, so `LOG_LEVEL` governs it like everything else a worker
+  emits. Yoga's error channel is demoted to debug: it fired for every resolver
+  error the mask function replaced, so an expected client error (a 404 from a
+  lookup, a validation failure) was logged at error level with a stack trace
+  on every request. Masked 5xx errors are still logged at error level by
+  `gqlMaskError`.
+
 ## [1.1.0] - 2026-09-10
 
 ### Added
