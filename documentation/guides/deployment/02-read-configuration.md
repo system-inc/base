@@ -107,7 +107,8 @@ That's the standard pattern inside [module](../modules/01-create-a-module.md) se
 
 | Value                               | Home                     | Read via                       |
 | ----------------------------------- | ------------------------ | ------------------------------ |
-| Differs per environment, or secret  | `env.toml`               | `BaseEnvironmentKey`           |
+| Secret (deploys as a CF secret)     | `env.toml`               | `BaseEnvironmentKey`           |
+| Per-environment config, not secret  | `wrangler.toml` `[vars]` | `BaseEnvironmentKey`           |
 | Behavior/configuration of the app   | `settings.ts`            | settings / `getModuleSettings` |
 | Deploy provenance (`COMMIT_SHA`, …) | stamped by `base deploy` | `BaseEnvironmentKey`           |
 

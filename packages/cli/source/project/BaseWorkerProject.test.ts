@@ -6,6 +6,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import {
+    BaseWorkerProject,
     readWorkersFolderFromPackageJson,
     resolvePersistTo,
     resolveWorkersScope,
@@ -452,5 +453,76 @@ describe('resolvePersistTo', () => {
         );
 
         expect(resolved).toBe(path.join(tmpRoot, 'camelized'));
+    });
+});
+
+describe('BaseWorkerProject environment variable sources', () => {
+    let workersFolder: string;
+    let project: BaseWorkerProject;
+
+    beforeEach(() => {
+        workersFolder = fs.realpathSync(
+            fs.mkdtempSync(path.join(os.tmpdir(), 'base-cli-test-')),
+        );
+        const workerFolder = path.join(workersFolder, 'billing');
+        fs.mkdirSync(workerFolder);
+        fs.writeFileSync(
+            path.join(workerFolder, 'wrangler.toml'),
+            '[env.Production.vars]\nLOG_LEVEL = "info"\nREGION = "us"\n',
+        );
+        fs.writeFileSync(
+            path.join(workersFolder, 'env.toml'),
+            '[Production]\nSHARED_TOKEN = "from-workspace"\nREGION = "eu"\n',
+        );
+        fs.writeFileSync(
+            path.join(workerFolder, 'env.toml'),
+            '[Production]\nSTRIPE_SECRET_KEY = "sk_live"\n' +
+                'CLOUDFLARE_API_TOKEN = "cli-only"\n' +
+                'DATABASES = [{ name = "@default", url = "mysql://x" }]\n',
+        );
+        project = BaseWorkerProject.create({
+            _: [],
+            $0: '',
+            worker: 'billing',
+            workersFolder,
+        });
+    });
+
+    afterEach(() => {
+        fs.rmSync(workersFolder, { recursive: true, force: true });
+    });
+
+    it('layers wrangler.toml vars, then workspace env.toml, then worker env.toml', () => {
+        const [variables, cliVariables] =
+            project.loadEnvironmentVariables('Production');
+
+        expect(variables).toMatchObject({
+            LOG_LEVEL: 'info',
+            REGION: 'eu',
+            SHARED_TOKEN: 'from-workspace',
+            STRIPE_SECRET_KEY: 'sk_live',
+        });
+        expect(variables).not.toHaveProperty('CLOUDFLARE_API_TOKEN');
+        expect(cliVariables).toEqual({ CLOUDFLARE_API_TOKEN: 'cli-only' });
+    });
+
+    it('reports env.toml names as secrets, excluding CLI-only names', () => {
+        const { secrets, wranglerVars } =
+            project.loadVariableNames('Production');
+
+        expect([...secrets].sort()).toEqual([
+            'DATABASES',
+            'REGION',
+            'SHARED_TOKEN',
+            'STRIPE_SECRET_KEY',
+        ]);
+        expect([...wranglerVars].sort()).toEqual(['LOG_LEVEL', 'REGION']);
+    });
+
+    it('reports nothing for an environment no file declares', () => {
+        const { secrets, wranglerVars } = project.loadVariableNames('Staging');
+
+        expect(secrets.size).toBe(0);
+        expect(wranglerVars.size).toBe(0);
     });
 });

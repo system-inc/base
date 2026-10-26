@@ -285,60 +285,18 @@ export class BaseWorkerProject {
         }
         let envFound = false;
 
-        // now load any environment variables from the wrangler.toml file
-        if (fs.existsSync(this.wranglerConfigFile)) {
-            const wranglerContent = fs.readFileSync(
-                this.wranglerConfigFile,
-                'utf8',
-            );
-            const config = Toml.parseToml(
-                this.wranglerConfigFile,
-                wranglerContent,
-            );
-            // load any environment variables for the current environment
-            if (config?.env?.[environment]?.vars) {
+        // wrangler.toml vars, then the workspace env.toml, then the worker's
+        // env.toml — each layer overriding the one before
+        for (const section of [
+            this.readWranglerVars(environment),
+            this.readEnvTomlSection(this.globalEnvFile, environment),
+            this.readEnvTomlSection(this.workerEnvFile, environment),
+        ]) {
+            if (section) {
                 envFound = true;
                 environmentVariables = {
                     ...environmentVariables,
-                    ...config.env[environment].vars,
-                };
-            }
-        }
-
-        // next overlay any global environment variables
-        if (fs.existsSync(this.globalEnvFile)) {
-            const globalEnvContent = fs.readFileSync(
-                this.globalEnvFile,
-                'utf8',
-            );
-            const globalEnv = Toml.parseToml(
-                this.globalEnvFile,
-                globalEnvContent,
-            );
-            if (globalEnv?.[environment]) {
-                envFound = true;
-                environmentVariables = {
-                    ...environmentVariables,
-                    ...globalEnv[environment],
-                };
-            }
-        }
-
-        // finally overlay any worker specific environment variables
-        if (fs.existsSync(this.workerEnvFile)) {
-            const workerEnvContent = fs.readFileSync(
-                this.workerEnvFile,
-                'utf8',
-            );
-            const workerEnv = Toml.parseToml(
-                this.workerEnvFile,
-                workerEnvContent,
-            );
-            if (workerEnv?.[environment]) {
-                envFound = true;
-                environmentVariables = {
-                    ...environmentVariables,
-                    ...workerEnv[environment],
+                    ...section,
                 };
             }
         }
@@ -367,6 +325,61 @@ export class BaseWorkerProject {
             environmentVariables as EnvironmentVariables,
             cliEnvironmentVariables as CliEnvironmentVariables,
         ];
+    }
+
+    /**
+     * Where the worker's variables for `environment` come from, by name.
+     *
+     * `secrets` are the names the env.toml files (workspace and worker)
+     * set — gitignored, so where credentials live, and what `deploy`
+     * uploads as Cloudflare secrets rather than plaintext vars. CLI-only
+     * names (`CliEnvironmentVariables.Keys`) never reach the worker, so
+     * they're excluded. `wranglerVars` are the names wrangler.toml's
+     * `[env.<environment>.vars]` declares, which wrangler deploys as vars
+     * on its own.
+     */
+    loadVariableNames(environment: string): {
+        secrets: Set<string>;
+        wranglerVars: Set<string>;
+    } {
+        const secrets = new Set<string>();
+        for (const file of [this.globalEnvFile, this.workerEnvFile]) {
+            for (const name of Object.keys(
+                this.readEnvTomlSection(file, environment) ?? {},
+            )) {
+                secrets.add(name);
+            }
+        }
+        for (const name of CliEnvironmentVariables.Keys) {
+            secrets.delete(name);
+        }
+        return {
+            secrets,
+            wranglerVars: new Set(
+                Object.keys(this.readWranglerVars(environment) ?? {}),
+            ),
+        };
+    }
+
+    private readWranglerVars(
+        environment: string,
+    ): Dictionary<string | undefined> | undefined {
+        return this.readToml(this.wranglerConfigFile)?.env?.[environment]?.vars;
+    }
+
+    private readEnvTomlSection(
+        file: string,
+        environment: string,
+    ): Dictionary<string | undefined> | undefined {
+        return this.readToml(file)?.[environment];
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private readToml(file: string): any {
+        if (!fs.existsSync(file)) {
+            return undefined;
+        }
+        return Toml.parseToml(file, fs.readFileSync(file, 'utf8'));
     }
 }
 
