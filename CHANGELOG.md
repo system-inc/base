@@ -35,6 +35,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `@WebSocketRpc()` or have `'public'` visibility. Code that switches on
     `routing.originType` should handle `'websocket'`.
 
+- **ORM: an `undefined` condition value no longer widens a write.** The
+  where builder treats an `undefined` key as "no condition", so
+  `db.delete(Doc, { tenantId: maybeUndefined, status: 'archived' })`
+  deleted archived rows for every tenant (the same for `update`,
+  `updateBatch`, `deleteBatch`, `writeBatch`'s `deleteWhere`,
+  `increment`, and `decrement`). Conditions-based writes now refuse an
+  `undefined` anywhere in their conditions — filter operands and relation
+  predicates included — with an error naming its path. `deleteBatch` also
+  refuses an empty entry, which it previously skipped. Reads are
+  unchanged: `undefined` still means "no filter" there, for
+  optional-filter building.
+
+    **Migration:** a write that relied on an `undefined` key being skipped
+    must omit the key instead.
+
+- **ORM: `OrmRepository.increment`, `decrement`, and `truncate` go through
+  the database's guards.** They called the adapter directly, so empty
+  conditions returned a silent `{ affectedRows: 0 }`, the entity-ownership
+  check was skipped, and `increment`/`decrement` didn't stamp
+  update-date columns the way `OrmDatabase.increment` does.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed
