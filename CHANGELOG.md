@@ -149,6 +149,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   array where the `TypeFunc` declares one object, with a 400
   `SERIALIZATION_ERROR`.
 
+- **Scheduled: `OrmPersistedScheduledExecutable` rethrows run failures.**
+  An error thrown by `run` was logged, recorded as `Failed`, and
+  swallowed, so the scheduled run reported success, a Durable Object
+  alarm was never retried, and unhandled-exception listeners never
+  heard of it — the opposite of what `ScheduledRunner` does for every
+  other executable. The error is now recorded and rethrown. A failure to
+  write the `Failed` status is logged instead of replacing the original
+  error, and a thrown value that can't be JSON-stringified (a BigInt, a
+  cycle) no longer breaks the recording. `run` returning `false` is still
+  a recorded soft failure that doesn't throw.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed

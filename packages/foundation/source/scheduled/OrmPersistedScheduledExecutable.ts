@@ -11,8 +11,15 @@ import { ScheduledExecutableContext } from './ScheduledExecutableContext';
 import { ScheduledExecutableInterface } from './ScheduledExecutableInterface';
 
 /**
- * Base class for persisted scheduled executables backed by the Orm
- * (Drizzle) stack. Orm counterpart of {@link PersistedScheduledExecutable}.
+ * Base class for scheduled executables whose runs are recorded in the
+ * database: each run inserts an {@link OrmScheduledExecutableEntity} row
+ * (status `Processing`), then marks it `Completed` or `Failed`.
+ *
+ * `run` returning `false` is a soft failure: recorded as `Failed`, and the
+ * scheduled run still succeeds. A thrown error is recorded as `Failed` and
+ * then rethrown, so it reaches the platform like any other executable's —
+ * a cron run reports failure, a Durable Object alarm is retried, and
+ * unhandled-exception listeners hear of it (see `ScheduledRunner`).
  */
 export abstract class OrmPersistedScheduledExecutable<
     EntityType extends OrmScheduledExecutableEntity,
@@ -88,15 +95,23 @@ export abstract class OrmPersistedScheduledExecutable<
                         : '.'),
             );
         } catch (error) {
-            const message =
-                `ScheduledExecutable error: ${this.identifier}, ` +
-                (error instanceof Error
-                    ? error.message
-                    : JSON.stringify(error));
+            const message = `ScheduledExecutable error: ${this.identifier}, ${describeError(error)}`;
             Logger.error(LogCategory.Scheduled, message);
             executableEntity.status = ScheduledExecutableStatus.Failed;
             executableEntity.message = message;
-            await this.repository.update(executableEntity);
+            try {
+                await this.repository.update(executableEntity);
+            } catch (recordError) {
+                // the run's own failure is the one that matters — don't let
+                // a failed status write replace it
+                Logger.error(
+                    LogCategory.Scheduled,
+                    'ScheduledExecutable: %s could not record its failure:',
+                    this.identifier,
+                    recordError,
+                );
+            }
+            throw error;
         }
     }
 
@@ -121,4 +136,16 @@ export abstract class OrmPersistedScheduledExecutable<
         entity: EntityType,
         context: ScheduledExecutableContext,
     ): Promise<boolean | void>;
+}
+
+function describeError(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    try {
+        return JSON.stringify(error) ?? String(error);
+    } catch {
+        // BigInt and circular values can't be JSON-stringified
+        return String(error);
+    }
 }

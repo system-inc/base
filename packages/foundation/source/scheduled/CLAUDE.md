@@ -40,7 +40,7 @@ Use the `isScheduledExecutableContextScheduledEvent` guard to discriminate.
 
 ## Persisted / DB-backed
 
-`OrmPersistedScheduledExecutable` + `OrmScheduledExecutableEntity` support database-backed scheduled work.
+`OrmPersistedScheduledExecutable` + `OrmScheduledExecutableEntity` support database-backed scheduled work: each run inserts a `Processing` row and marks it `Completed` or `Failed`. `run` returning `false` is a recorded soft failure; a thrown error is recorded as `Failed` and **rethrown**, so it reaches the platform like any executable's (a failed status write is logged, never allowed to replace the original error).
 
 ## See also
 
