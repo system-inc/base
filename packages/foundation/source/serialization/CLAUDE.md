@@ -22,7 +22,7 @@ export class AccountDto {
 ## Functions
 
 - **`serialize(value, options?)`** → `Json`. Projects only the `@SerializableField`s (so internal fields never leak). Handles arrays, applies transformers/renames, and manages cycles via `onCycle: 'error' | 'omit' | 'null'`; also accepts JSON `replacer`/`space`.
-- **`deserialize(raw, typeFunc, options?)`** → a typed instance. Validates required fields, applies defaults and transformers. `DeserializeOptions` is `{ strict?: boolean }` — strict mode turns a failed deserialize into an HTTP 400 instead of `undefined`.
+- **`deserialize(raw, typeFunc, options?)`** → a typed instance. Validates required fields, applies defaults and transformers. A class type requires a JSON object: a primitive or an array where the `TypeFunc` declares a single object is a 400 (`SERIALIZATION_ERROR`), at the top level or in a nested field. (A bare constructor rather than a `TypeFunc` still maps a raw array to an array of instances.) `DeserializeOptions` is `{ strict?: boolean }` — strict mode turns a failed deserialize into an HTTP 400 instead of `undefined`.
 
 ## Interfaces
 

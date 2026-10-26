@@ -117,6 +117,17 @@ function _deserialize(
         return undefined;
     }
 
+    // A class is built from a JSON object. Anything else is a malformed
+    // request: a client-sent primitive would otherwise reach the `in`
+    // checks below and throw a TypeError (a 500), and an array would be
+    // read as an object with no fields.
+    if (typeof raw !== 'object' || Array.isArray(raw)) {
+        throw HttpErrors.badRequest({
+            message: `Expected an object for ${info.ctor.name}, got ${Array.isArray(raw) ? 'an array' : `a ${typeof raw}`}.`,
+            errorCode: ERROR_CODE_SERIALIZATION_ERROR,
+        });
+    }
+
     // Create a new instance of the class
     const typeInstance: any = new info.ctor();
 

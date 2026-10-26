@@ -141,6 +141,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   un-sent remainder is returned to the front of the buffer for the next
   drain.
 
+- **Serialization: a non-object body for a class type is a 400, not a 500.** A JSON primitive (`"abc"`, `5`, `true`) sent where an
+  `@HttpBody`/`@RpcArgument` class — or a nested class field — was
+  expected reached `fieldName in raw` and threw a `TypeError`: a 500,
+  logged and reported as an unhandled exception, that any anonymous
+  client could trigger. `deserialize` now answers a primitive, or an
+  array where the `TypeFunc` declares one object, with a 400
+  `SERIALIZATION_ERROR`.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed
