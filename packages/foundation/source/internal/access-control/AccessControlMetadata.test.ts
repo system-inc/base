@@ -81,12 +81,17 @@ describe('AccessControlMetadata (constructor-identity keyed)', () => {
         ).toThrow(/already exist/);
     });
 
-    it('merges a base class guard onto a subclass handler by identity', () => {
+    it('resolves a subclass method guard over a base class guard by identity', () => {
         const metadata = new AccessControlMetadata();
         class Base {}
         class Derived extends Base {}
-        metadata.addClassSessionAccessOptions(Base, { roles: ['BaseRole'] });
+        metadata.addClassSessionAccessOptions(Base, {
+            skipAuthorization: false,
+            roles: ['BaseRole'],
+            entitlements: ['base-entitlement'],
+        });
         metadata.addMethodSessionAccessOptions(Derived, 'act', {
+            skipAuthorization: false,
             roles: ['MethodRole'],
         });
 
@@ -94,9 +99,13 @@ describe('AccessControlMetadata (constructor-identity keyed)', () => {
             new BaseHandler(Derived, 'act'),
         );
 
-        expect(options?.roles).toEqual(
-            expect.arrayContaining(['BaseRole', 'MethodRole']),
-        );
+        // the method's roles win; the entitlements it doesn't state come
+        // from the base class guard
+        expect(options).toEqual({
+            skipAuthorization: false,
+            roles: ['MethodRole'],
+            entitlements: ['base-entitlement'],
+        });
     });
 
     it('reports class coverage by identity, walking the prototype chain', () => {

@@ -26,7 +26,7 @@ import { getAccessControlMetadata } from './AccessControlMetadata';
  * For a decorated handler:
  *   1. Resolves the identity via the registered
  *      {@link SessionContextProvider} (from `accessControl.provider` in
- *      worker/module settings), passing the handler's merged options so
+ *      worker/module settings), passing the handler's resolved options so
  *      the provider can apply option-dependent policy. The resolved
  *      context is stored under {@link SessionContextRequestKey}. The
  *      provider is called once per decorated handler — providers own any
