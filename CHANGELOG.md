@@ -56,6 +56,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   check was skipped, and `increment`/`decrement` didn't stamp
   update-date columns the way `OrmDatabase.increment` does.
 
+- **CLI: `base deploy` uploads `env.toml` values as Cloudflare secrets.**
+  Every merged variable was passed to `wrangler deploy` as
+  `--var NAME:VALUE`, so secrets in `env.toml` — where the scaffold tells
+  you to put them — became plaintext variables on the deployed worker,
+  visible in the Cloudflare dashboard, and appeared in the process
+  arguments (`ps`, CI logs) while wrangler ran. Values from the workspace
+  and worker `env.toml` now go up through `wrangler deploy --secrets-file`
+  from a private temporary file that is deleted afterward;
+  `wrangler.toml` `[vars]` and the CLI's provenance stamps stay plain
+  vars. `base develop` is unchanged.
+
+    **Migration:** no file changes are needed. Non-sensitive config kept in
+    `env.toml` now shows as an encrypted secret; move it to
+    `wrangler.toml` `[env.<Name>.vars]` if you want it visible. A name set
+    in both `wrangler.toml` `[vars]` and `env.toml` now fails the deploy.
+    Secret uploads are additive, so removing a name from `env.toml` no
+    longer removes it from the worker — run `wrangler secret delete`.
+    Verify the first deploy in a non-production environment.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed

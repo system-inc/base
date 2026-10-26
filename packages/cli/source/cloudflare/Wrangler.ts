@@ -14,6 +14,7 @@ import {
     BaseWorkerProject,
     resolvePersistTo,
 } from '../project/BaseWorkerProject';
+import { WranglerSecrets } from './WranglerSecrets';
 
 export namespace Wrangler {
     export function dev(
@@ -231,12 +232,24 @@ export namespace Wrangler {
             mutableEnv.EXECUTION_MODE = ExecutionModeType.Local;
         }
 
-        const environmentVariablesStrings = [];
-        for (const key in workerEnvironmentVariables) {
-            environmentVariablesStrings.push(
-                `${key}:${workerEnvironmentVariables[key]}`,
-            );
-        }
+        // On deploy, env.toml values go up as secrets through a temporary
+        // file — as `--var`s they'd be plaintext on the deployed worker and
+        // visible in the process arguments. `wrangler dev` keeps them as
+        // `--var`s: they stay on this machine, and its `--env-file` would
+        // stop wrangler loading the worker's own `.dev.vars`.
+        const { secrets: secretNames, wranglerVars } =
+            command === 'deploy'
+                ? worker.loadVariableNames(workerEnvironment)
+                : {
+                      secrets: new Set<string>(),
+                      wranglerVars: new Set<string>(),
+                  };
+        const { vars, secrets } = WranglerSecrets.split(
+            workerEnvironmentVariables,
+            secretNames,
+            wranglerVars,
+        );
+        const varArguments = WranglerSecrets.toVarArguments(vars);
 
         console.log(
             'Running wrangler',
@@ -247,27 +260,34 @@ export namespace Wrangler {
             worker.indexFile,
             'with',
             options,
+            Object.keys(secrets).length > 0
+                ? `and secrets ${Object.keys(secrets).join(', ')}`
+                : '',
         );
 
-        return Run.program(
-            resolveWranglerBin(),
-            [
-                command,
-                worker.indexFile,
-                ...options,
-                '--config',
-                worker.wranglerConfigFile,
-                '--env',
-                workerEnvironment,
-                '--var',
-                ...environmentVariablesStrings,
-            ],
-            {
-                env: {
-                    ...process.env,
-                    ...wranglerEnvironmentVariables,
+        await WranglerSecrets.withSecretsFile(secrets, (secretsFile) =>
+            Run.program(
+                resolveWranglerBin(),
+                [
+                    command,
+                    worker.indexFile,
+                    ...options,
+                    '--config',
+                    worker.wranglerConfigFile,
+                    '--env',
+                    workerEnvironment,
+                    ...(secretsFile ? ['--secrets-file', secretsFile] : []),
+                    ...(varArguments.length > 0
+                        ? ['--var', ...varArguments]
+                        : []),
+                ],
+                {
+                    env: {
+                        ...process.env,
+                        ...wranglerEnvironmentVariables,
+                    },
                 },
-            },
+            ),
         );
     }
 }

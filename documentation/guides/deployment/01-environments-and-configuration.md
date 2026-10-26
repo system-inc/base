@@ -40,6 +40,9 @@ A workspace-level `env.toml` (in the workers folder) layers underneath every wor
 For the active environment, the CLI merges (later wins): `wrangler.toml` `[env.X.vars]` → workspace `env.toml [X]` → worker `env.toml [X]`. Then it splits the result:
 
 - **Worker variables** are passed to your worker as bindings: objects and arrays are JSON-stringified transparently (that's why `DATABASES = [{...}]` works).
+    - On `base deploy`, every value that came from an `env.toml` is uploaded as a Cloudflare **secret** (encrypted, never shown in the dashboard), through a private temporary file passed to `wrangler deploy --secrets-file`, so it never appears on the command line either. `wrangler.toml` `[vars]` and the provenance values the CLI stamps (`ENVIRONMENT`, `COMMIT_SHA`, …) stay plaintext vars. A name set in both `wrangler.toml` `[vars]` and an `env.toml` is an error: a worker can't hold a var and a secret of the same name.
+    - Secret uploads are additive: removing a name from `env.toml` doesn't delete the secret from Cloudflare (`wrangler secret delete <NAME>` does).
+    - `base develop` passes everything as local `--var`s; nothing leaves your machine.
 - **CLI credentials** (`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `WRANGLER_LOG`, and friends) are lifted out and given only to the tooling: the wrangler subprocess, and the CLI's own Cloudflare API calls for [remote D1 work](../orm/03-migrations.md). They never become worker bindings, so platform credentials can live in `env.toml` without leaking into your runtime.
 
 ## Environment names
