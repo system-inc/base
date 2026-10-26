@@ -28,7 +28,7 @@ Per call, the dispatcher:
 3. enforces visibility/`allowedWorkers`, then rejects services not listed in `services` settings — defined ≠ callable;
 4. resolves the service from the request container, sets `rc.handler`, and runs handler middleware — access control first, deliberately **before** argument deserialization so an unauthenticated caller can't exercise deserialization/validation ahead of the auth check;
 5. for each declared `@RpcArgument`, **deserializes** the raw JSON to the typed param (`serialization/Deserialize`) and, when it's a class type, runs `validate()` — failures become an `RPC_ERROR_CODE_VALIDATION_ERROR` carrying an `ArgumentValidationError` (same validation path as HTTP/GraphQL — see [`validation/`](../validation/CLAUDE.md)); resolves `@InjectRequestContext()` params;
-6. invokes the method and **serializes** the result into an `RpcSuccess`, or maps thrown errors through `BaseError.forClient` (masking internals) into an `RpcFailure` with the right `RpcErrorCode` (`NOT_ALLOWED`, `INTERNAL_ERROR`, `VALIDATION_ERROR`).
+6. invokes the method and **serializes** the result into an `RpcSuccess`, or maps thrown errors through `BaseError.forClient` (masking internals) into an `RpcFailure` with the right `RpcErrorCode` (`NOT_ALLOWED`, `INTERNAL_ERROR`, `VALIDATION_ERROR`). The failure's `cause` is the full error record, stack included, only for an `'internal'` caller (a bound worker); everyone else gets the client-safe `toJSON()` shape — no stack, database messages redacted.
 
 ### Visibility (`RpcVisibility`)
 

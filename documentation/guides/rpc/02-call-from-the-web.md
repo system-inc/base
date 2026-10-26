@@ -69,7 +69,7 @@ try {
 
 Two details worth knowing:
 
-- **Unexpected server errors arrive masked.** A handler that throws an unknown error surfaces to the client as `RPC_ERROR_CODE_INTERNAL_ERROR` with `'Internal server error'` — internals are logged server-side, never leaked to callers.
+- **Unexpected server errors arrive masked.** A handler that throws an unknown error surfaces to the client as `RPC_ERROR_CODE_INTERNAL_ERROR` with `'Internal server error'` — internals are logged server-side, never leaked to callers. Error detail sent to a browser never includes a stack trace; only a bound worker calling over a service binding gets the full error record.
 - **Need the envelope?** `client.callProcedure('getNote', [id], options)` skips the proxy and returns the full response (`status`, call `id`, `durationMs`, and the underlying `http` status) useful for instrumentation.
 
 ## Server prerequisites
