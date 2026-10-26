@@ -11,6 +11,8 @@ import { HttpBody } from '../../router/decorators/HttpBody';
 import { HttpQuery } from '../../router/decorators/HttpQuery';
 import { HttpRoute } from '../../router/decorators/HttpRoute';
 import { HttpService } from '../../router/decorators/HttpService';
+import { SerializableField } from '../../serialization/decorators/SerializableField';
+import { SerializableObject } from '../../serialization/decorators/SerializableObject';
 import { BaseRouter } from './BaseRouter';
 
 // ---- Route-dispatch harness -------------------------------------------------
@@ -164,6 +166,34 @@ class BodyService {
         return Response.json({ received: body });
     }
 }
+
+@SerializableObject()
+class TypedBody {
+    @SerializableField(() => String)
+    name!: string;
+}
+
+@HttpService()
+class TypedBodyService {
+    @HttpRoute('POST', 'typed-body')
+    submit(@HttpBody(() => TypedBody) body: TypedBody): Response {
+        return Response.json({ name: body.name });
+    }
+}
+
+describe('typed body deserialization', () => {
+    it('400s (not 500s) on a JSON primitive where an object is declared', async () => {
+        const router = makeTestRouter([TypedBodyService]);
+        deferredEvents = [];
+        const response = await router.dispatch('POST', 'http://x/typed-body', {
+            body: '"abc"',
+            headers: { 'content-type': 'application/json' },
+        });
+        expect(response.status).toBe(400);
+        // a malformed request is not an unhandled exception
+        expect(deferredEvents).toEqual([]);
+    });
+});
 
 describe('handler middleware runs before argument binding', () => {
     beforeEach(() => {
