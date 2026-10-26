@@ -13,7 +13,6 @@ import './preload';
 import './RegisterTsRuntimeIfTsEntry';
 
 import { DefaultConfigurationKey } from '@system-inc/base-common/configuration/NamedConfiguration';
-import { EnvironmentType } from '@system-inc/base-foundation/configuration/Environment';
 import { EnvironmentVariables } from '@system-inc/base-foundation/configuration/EnvironmentVariables';
 import { ExecutionModeType } from '@system-inc/base-foundation/configuration/ExecutionMode';
 import { PlatformType } from '@system-inc/base-foundation/configuration/Platform';
@@ -47,9 +46,19 @@ async function runWorker() {
         _: process.argv.slice(1),
     });
 
-    // get the environment type from the process.env
-    const environmentType =
-        process.env.ENVIRONMENT ?? EnvironmentType.Development;
+    // ENVIRONMENT is required, never guessed: `base develop` and the
+    // scaffold's debug configuration set it, and a container gets it from
+    // its container class's `envVars`. Defaulting to Development would run
+    // a production container with dev-only behavior switched on.
+    const environmentType = process.env.ENVIRONMENT;
+    if (!environmentType) {
+        console.error(
+            'ENVIRONMENT is not set. Set it for the worker process — for a ' +
+                'container, pass it from the container class, e.g. ' +
+                '`this.envVars = { ENVIRONMENT: env.ENVIRONMENT }`.',
+        );
+        process.exit(1);
+    }
     const executionMode = process.env.EXECUTION_MODE
         ? ExecutionModeType.fromString(process.env.EXECUTION_MODE)
         : ExecutionModeType.Local;
