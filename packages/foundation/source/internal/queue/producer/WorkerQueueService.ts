@@ -109,11 +109,23 @@ export class WorkerQueueService {
         queue: string,
         options?: WorkerQueueSubmitOptions,
     ): Promise<void> {
-        // get any messages that need to be sumbitted
-        const messages = this.queues[queue];
-        if (!messages) {
+        if (!this.queues[queue]?.length) {
             return;
         }
+
+        // get the driver for the queue — before taking the messages, so a
+        // missing binding leaves them buffered
+        const driver = this.getQueueDriver(queue);
+
+        // Take the buffered messages before awaiting anything. This service
+        // is worker-scoped, so every concurrent event in the isolate shares
+        // the buffer and may drain it. Sending from the shared array and
+        // splicing after the await let two overlapping drains send the same
+        // batch twice and then splice away messages neither had sent.
+        // Detached, each drain owns a disjoint set; whatever is enqueued
+        // meanwhile starts a fresh buffer for the next drain.
+        const messages = this.queues[queue]!;
+        delete this.queues[queue];
 
         Logger.debug(
             LogCategory.Queue,
@@ -122,18 +134,19 @@ export class WorkerQueueService {
             messages.length,
         );
 
-        // get the driver for the queue
-        const driver = this.getQueueDriver(queue);
         try {
             // submitMessageBatch consumes `messages` in place, removing each
             // message as it is accepted (see WorkerQueueDriver).
             await driver.submitMessageBatch(messages, options);
         } finally {
-            // Drop the buffer entry only once fully drained. On a partial
-            // failure the un-sent remainder stays buffered for the next
-            // drain, so already-accepted messages are never re-sent.
-            if (messages.length === 0) {
-                delete this.queues[queue];
+            // On a partial failure, return the un-sent remainder to the
+            // front of the buffer — ahead of anything enqueued meanwhile —
+            // for the next drain. Accepted messages are never re-sent.
+            if (messages.length > 0) {
+                this.queues[queue] = [
+                    ...messages,
+                    ...(this.queues[queue] ?? []),
+                ];
             }
         }
 
