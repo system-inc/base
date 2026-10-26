@@ -27,9 +27,11 @@ Bundles three derived values, each parsed from an env var:
 
 | Class           | Enum                                                              | Default            | Helpers                         |
 | --------------- | ----------------------------------------------------------------- | ------------------ | ------------------------------- |
-| `Environment`   | `EnvironmentType`: Development / Production                       | Development        | `isDevelopment`, `isProduction` |
+| `Environment`   | `EnvironmentType`: Development / Production                       | none — required†   | `isDevelopment`, `isProduction` |
 | `Platform`      | `PlatformType`: CloudflareWorker / CloudflareDurableObject / Node | CloudflareWorker\* | `isCloudflare`, `isNode`        |
 | `ExecutionMode` | `ExecutionModeType`: Default / CommandLine / Test / Local         | Default            | `isCommandLine`, …              |
+
+† A missing or blank `ENVIRONMENT` throws when the runtime is first read (at `Base.initialize`), never falls back: a guessed Development would enable GraphiQL/introspection in production. The CLI sets it for every command (the node launcher, which is also the container bootstrap, requires it too).
 
 \* Platform defaults to Cloudflare because Cloudflare doesn't set a `PLATFORM` env var. `Platform.type` is what `Base` switches on to pick the platform delegate; `ExecutionMode.isCommandLine` is why `Base` uses a `DummyRouter` under the CLI; `EnvironmentType` gates dev-only behavior (e.g. unreleased-migration deploy checks).
 

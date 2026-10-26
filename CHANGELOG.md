@@ -93,6 +93,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     the method's list if both should pass. A method `@RequireSessionAccess`
     on a `@WithSessionAccess` class now requires a session.
 
+- **Runtime: `ENVIRONMENT` is required.** A worker started without
+  `ENVIRONMENT` silently ran as Development, which turns GraphiQL and
+  schema introspection on — so a deploy outside the CLI (a raw
+  `wrangler deploy`, a hand-rolled Node runner) served them in
+  production. Containers were always affected: the node bootstrap
+  defaulted to Development too, so a production container also read its
+  `env.toml` `[Development]` section. A missing or blank `ENVIRONMENT`
+  now fails at boot, in the runtime and in the node launcher. Every
+  `base` CLI command already sets it, so CLI workflows are unchanged.
+
+    **Migration:** set `ENVIRONMENT` wherever a worker starts outside the
+    CLI. A container class passes it through `envVars`, e.g.
+    `this.envVars = { ENVIRONMENT: env.ENVIRONMENT }` in its constructor.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed

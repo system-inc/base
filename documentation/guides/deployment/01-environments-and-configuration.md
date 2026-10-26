@@ -47,7 +47,7 @@ For the active environment, the CLI merges (later wins): `wrangler.toml` `[env.X
 
 ## Environment names
 
-`-e <Name>` selects the environment; `Development` is the default. Names are free-form: define `Staging`, `Integration`, `Dogfood`, whatever your pipeline needs. This is deliberate design, not an unfinished enum: exactly two names are **semantic poles** with framework behavior attached, and every custom name lands in a strict middle that treats it as a real environment by default.
+`-e <Name>` selects the environment; `Development` is the CLI's default. The CLI passes the choice to the worker as `ENVIRONMENT`, which the runtime **requires**: a worker started without it — a raw `wrangler deploy`, a hand-rolled Node runner, a container whose class doesn't pass it — fails at boot instead of guessing, since a guessed `Development` would switch on GraphiQL and introspection in production. Names are free-form: define `Staging`, `Integration`, `Dogfood`, whatever your pipeline needs. This is deliberate design, not an unfinished enum: exactly two names are **semantic poles** with framework behavior attached, and every custom name lands in a strict middle that treats it as a real environment by default.
 
 |                                               | `Development`  | Custom (`Staging`, `Dogfood`, …) | `Production` |
 | --------------------------------------------- | -------------- | -------------------------------- | ------------ |

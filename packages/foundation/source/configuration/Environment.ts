@@ -18,28 +18,39 @@ export enum EnvironmentType {
 
 /**
  * The environment the worker is running in, parsed from the `ENVIRONMENT`
- * environment variable. Defaults to Development; custom environment names
- * are preserved as-is.
+ * environment variable. Custom environment names are preserved as-is.
+ *
+ * `ENVIRONMENT` is required. There is deliberately no default: falling
+ * back to Development would turn on dev-only behavior (GraphiQL, schema
+ * introspection, migration-drift wipes) wherever a deploy forgot to set
+ * it, and falling back to Production would hide the mistake. The `base`
+ * CLI sets it for every command; deploys and runners outside the CLI must
+ * set it themselves.
  */
 export class Environment {
     readonly type: string;
 
-    constructor(environment?: string) {
-        let environmentType;
-        if (environment) {
-            switch (environment.toLowerCase()) {
-                case EnvironmentType.Development.toLowerCase():
-                    environmentType = EnvironmentType.Development;
-                    break;
-                case EnvironmentType.Production.toLowerCase():
-                    environmentType = EnvironmentType.Production;
-                    break;
-                default:
-                    environmentType = environment;
-                    break;
-            }
+    constructor(environment: string | undefined) {
+        if (!environment || environment.trim().length === 0) {
+            throw new Error(
+                'ENVIRONMENT is not set. Base needs to know which environment ' +
+                    "it's running in (e.g. Development, Production, Staging) and " +
+                    'never guesses one. The `base` CLI sets it for you; when ' +
+                    'deploying or running a worker any other way, set the ' +
+                    'ENVIRONMENT variable explicitly.',
+            );
         }
-        this.type = environmentType ?? EnvironmentType.Development;
+        switch (environment.toLowerCase()) {
+            case EnvironmentType.Development.toLowerCase():
+                this.type = EnvironmentType.Development;
+                break;
+            case EnvironmentType.Production.toLowerCase():
+                this.type = EnvironmentType.Production;
+                break;
+            default:
+                this.type = environment;
+                break;
+        }
     }
 
     /**

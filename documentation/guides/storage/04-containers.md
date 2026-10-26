@@ -30,9 +30,20 @@ Containers sit on Durable Objects, so the outer entry declares a container class
 import { CfContainer } from '@system-inc/base-foundation/cloudflare/durable-object/container/core/CfContainer';
 import { CfContainerWorker } from '@system-inc/base-foundation/cloudflare/durable-object/container/core/CfContainerWorker';
 
-export class ImageWorkerContainer extends CfContainer {
+interface ContainerEnv {
+    ENVIRONMENT: string;
+}
+
+export class ImageWorkerContainer extends CfContainer<ContainerEnv> {
     defaultPort = 8080; // the port the containerized worker listens on
     sleepAfter = '10m'; // stop the instance after 10 idle minutes
+
+    constructor(ctx: DurableObjectState, env: ContainerEnv) {
+        super(ctx, env);
+        // the inner worker requires ENVIRONMENT: it selects the container's
+        // env.toml section and Base's environment behavior
+        this.envVars = { ENVIRONMENT: env.ENVIRONMENT };
+    }
 }
 
 export default new CfContainerWorker(ImageWorkerContainer, [
@@ -57,7 +68,7 @@ durable_objects = { bindings = [
 
 `container/index.ts` and `container/settings.ts` are a completely normal Base worker (`BaseWorker.create(settings)`, `services`, RPC, the lot) with `server.port` matching `defaultPort`. Native dependencies go in `container/package.json` and are installed inside the image, where their bindings match the container's architecture.
 
-The Dockerfile consumes the CLI's build output: `base container dist` bundles the worker script and a Node bootstrap into `container/dist/`, and the image's command is `node ./bootstrap.js <worker-name> ./workers ./<worker>.js`. You rarely run that yourself — **`develop`, `deploy`, and `bundle` build the container automatically** whenever a `container/` folder exists.
+The Dockerfile consumes the CLI's build output: `base container dist` bundles the worker script and a Node bootstrap into `container/dist/`, and the image's command is `node ./bootstrap.js <worker-name> ./workers ./<worker>.js`. The bootstrap refuses to start without `ENVIRONMENT` — pass it from the container class's `envVars`, as above (the outer worker always has it: the CLI sets it on every deploy and dev session). You rarely run that yourself — **`develop`, `deploy`, and `bundle` build the container automatically** whenever a `container/` folder exists.
 
 ## Calling into the container
 
