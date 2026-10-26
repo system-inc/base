@@ -107,6 +107,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     CLI. A container class passes it through `envVars`, e.g.
     `this.envVars = { ENVIRONMENT: env.ENVIRONMENT }` in its constructor.
 
+- **Scaffold: the production deploy ships the commit Integration
+  tested.** The generated `deploy-production.yml` runs on `workflow_run`
+  but checked out with no `ref`, which on `workflow_run` is the default
+  branch's latest commit — possibly newer than, and untested by, the run
+  that triggered it. It also set `cancel-in-progress: true`, so a second
+  deploy could cancel one halfway through its workers. It now checks out
+  `github.event.workflow_run.head_sha` (falling back to `github.sha` for
+  manual dispatch) and queues deploys instead of cancelling them.
+
+    **Migration:** existing workspaces keep their generated file. In
+    `.github/workflows/deploy-production.yml`, give the `actions/checkout`
+    step a `with:` block containing
+    `ref: ${{ github.event.workflow_run.head_sha || github.sha }}`, and set
+    `cancel-in-progress: false`.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed
