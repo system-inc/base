@@ -131,6 +131,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   redacted, as HTTP and GraphQL already did); internal callers (a bound
   worker over a service binding) still get the full record.
 
+- **Queue: concurrent requests no longer duplicate or drop each other's
+  messages.** `WorkerQueueService` is worker-scoped, so concurrent events
+  in one isolate share its buffer, and each event's post-response drain
+  flushes all of it. A drain sent a batch straight from the shared array
+  and removed it only after the send resolved, so two overlapping drains
+  sent the same messages twice and then removed messages neither had
+  sent. Each drain now takes the buffered messages before sending; an
+  un-sent remainder is returned to the front of the buffer for the next
+  drain.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed
