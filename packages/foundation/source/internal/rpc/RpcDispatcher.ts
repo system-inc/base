@@ -3,6 +3,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { rpcError } from '@system-inc/base-client/rpc/client/error/RpcClientErrorHandling';
+import { BaseErrorDataType } from '@system-inc/base-common/error/interfaces/BaseErrorDataType';
 import { Json } from '@system-inc/base-common/json/Json';
 import { LogCategory } from '@system-inc/base-common/logging/LogCategory';
 import { Logger } from '@system-inc/base-common/logging/Logger';
@@ -278,6 +279,22 @@ export class RpcDispatcher {
     }
 
     /**
+     * The error detail a failed call returns. A bound worker gets the full
+     * record, stack included, to debug across workers; every other caller
+     * gets the client-safe shape (`toJSON()`: no stack, database messages
+     * redacted), since a stack exposes internal file paths and a raw
+     * database message can carry SQL and bound values.
+     */
+    private errorDetailFor(
+        request: BaseRequest,
+        error: BaseError,
+    ): BaseErrorDataType {
+        return request.context.routing.originType === 'internal'
+            ? error.getSerializer().error
+            : error.toJSON();
+    }
+
+    /**
      * Whether the call was relayed from a client socket by a worker on the
      * `allowedWorkers` list — the only caller whose socket identity
      * (`rpc.meta`) is believed.
@@ -373,6 +390,7 @@ export class RpcDispatcher {
             let argValue: Json | object | undefined = rawArg;
             if (argMeta.typeFunc) {
                 argValue = await this.deserializeArgument(
+                    request,
                     rpc,
                     i,
                     rawArg,
@@ -427,12 +445,13 @@ export class RpcDispatcher {
                 rpc,
                 RPC_ERROR_CODE_INTERNAL_ERROR,
                 safe.message,
-                safe.getSerializer().error,
+                this.errorDetailFor(request, safe),
             );
         }
     }
 
     private async deserializeArgument(
+        request: BaseRequest,
         rpc: RpcCall,
         argIndex: number,
         rawArg: Json,
@@ -480,7 +499,7 @@ export class RpcDispatcher {
                 rpc,
                 RPC_ERROR_CODE_VALIDATION_ERROR,
                 `Error deserializing argument at index ${argIndex}.`,
-                safe.getSerializer().error,
+                this.errorDetailFor(request, safe),
             );
         }
     }

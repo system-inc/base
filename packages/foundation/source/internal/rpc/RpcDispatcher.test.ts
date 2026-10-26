@@ -170,6 +170,7 @@ describe('RpcDispatcher defers Base.UnhandledException', () => {
                 requestId: 'request-1',
                 ipAddress: '203.0.113.7',
                 userAgent: 'jest-agent',
+                routing: { originType: 'public' },
             },
         } as unknown as BaseRequest;
 

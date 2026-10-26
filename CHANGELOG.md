@@ -122,6 +122,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `ref: ${{ github.event.workflow_run.head_sha || github.sha }}`, and set
     `cancel-in-progress: false`.
 
+- **RPC: error responses carry stack traces only for bound workers.** An
+  RPC failure's `cause` was the handler error's full serializer record —
+  its stack trace (internal file paths and line numbers) and, for 4xx
+  errors, the unredacted message, including the SQL and bound values of
+  a database error — sent to every caller. Public and WebSocket callers
+  now get the client-safe shape (`toJSON()`: no stack, database messages
+  redacted, as HTTP and GraphQL already did); internal callers (a bound
+  worker over a service binding) still get the full record.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed
