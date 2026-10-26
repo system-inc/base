@@ -25,7 +25,7 @@ export interface SessionContextProvider {
      *
      * Called once per decorated handler (a request that dispatches several
      * decorated handlers, e.g. a GraphQL query, resolves each one), with
-     * that handler's merged {@link SessionAccessOptions}. This lets a
+     * that handler's resolved {@link SessionAccessOptions}. This lets a
      * provider apply option-dependent policy — e.g. enforce a device
      * requirement only when authorization will run
      * (`skipAuthorization` false). Providers whose identity lookup is

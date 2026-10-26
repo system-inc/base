@@ -75,6 +75,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     longer removes it from the worker — run `wrangler secret delete`.
     Verify the first deploy in a non-production environment.
 
+- **Access control: the most specific declaration wins.** Class, method,
+  and base-class `@RequireSessionAccess` / `@WithSessionAccess` options
+  merged — `skipAuthorization` ORed and role/entitlement lists
+  concatenated — so a class-level `@WithSessionAccess()` silently opened a
+  method marked `@RequireSessionAccess()`, and because roles match
+  any-of, a method's roles added alternatives to the class's instead of
+  narrowing them. Options now resolve field by field from the most
+  specific declaration that states the field: method-level over
+  class-level, and the handler's own class over its base classes — the
+  precedence RPC visibility already uses. A field the method doesn't
+  state (e.g. `roles` under a bare `@RequireSessionAccess()`) is still
+  inherited, so restating a guard never drops a requirement.
+
+    **Migration:** a method that named its own `roles` or `entitlements` on
+    a guarded class now requires those alone; add the class's values to
+    the method's list if both should pass. A method `@RequireSessionAccess`
+    on a `@WithSessionAccess` class now requires a session.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed

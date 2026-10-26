@@ -6,9 +6,10 @@ import { SessionAccessRequirements } from './SessionAccessRequirements';
 /**
  * A handler's effective access-control record: its
  * {@link SessionAccessRequirements} plus the enforcement mode. This is
- * what the decorators store in metadata (class + method options merge),
- * what the session-access middleware enforces, and what the
- * `SessionContextProvider` receives for option-dependent policy.
+ * what the decorators store in metadata (where the most specific
+ * declaration wins, field by field), what the session-access middleware
+ * enforces, and what the `SessionContextProvider` receives for
+ * option-dependent policy.
  */
 export interface SessionAccessOptions extends SessionAccessRequirements {
     /**

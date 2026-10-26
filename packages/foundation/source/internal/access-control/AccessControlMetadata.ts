@@ -85,57 +85,78 @@ export class AccessControlMetadata {
     }
 
     /**
-     * The effective options for a handler — the class options and method
-     * options from the handler's own class and every base class it
-     * inherits from, merged (role/entitlement lists concatenate,
-     * `skipAuthorization` ORs). Walking the prototype chain is what makes
-     * a guard declared on a base class protect a registered subclass;
-     * without it an inherited `@RequireSessionAccess` is silently dropped
-     * and the handler fails open. `undefined` means the handler carries
-     * no access-control decorators anywhere in its chain, so session
-     * access does not run for it.
+     * The effective options for a handler: the most specific declaration
+     * wins, field by field — the same precedence RPC visibility uses.
+     *
+     * Declarations rank method-level first, then class-level; within each
+     * kind the handler's own class beats its base classes, nearest first.
+     * Each field (`skipAuthorization`, `roles`, `entitlements`) comes from
+     * the highest-ranked declaration that states it, so:
+     *
+     * - a method `@RequireSessionAccess` on a `@WithSessionAccess` class
+     *   requires a session, and a method `@WithSessionAccess` opens one
+     *   method on a guarded class;
+     * - a method's `roles` replace the class's instead of widening them
+     *   (role matching is any-of, so a union would let either list in);
+     * - a method that doesn't state `roles` keeps the class's, so restating
+     *   `@RequireSessionAccess()` never silently drops a requirement.
+     *
+     * Walking the prototype chain is what makes a guard declared on a base
+     * class protect a registered subclass; without it an inherited
+     * `@RequireSessionAccess` is silently dropped and the handler fails
+     * open. `undefined` means the handler carries no access-control
+     * decorators anywhere in its chain, so session access does not run
+     * for it.
      */
     getSessionAccessOptionsForHandler(handler: {
         readonly target: Constructor<object>;
         readonly methodName: string;
     }): SessionAccessOptions | undefined {
-        // Collect class-then-method options at each level from the concrete
-        // class up through its base classes. Metadata is keyed by class
-        // name, so each ancestor is looked up by its own name.
-        const collected: SessionAccessOptions[] = [];
+        // Metadata is keyed by class, so each ancestor is looked up by its
+        // own constructor.
+        const methodDeclarations: SessionAccessOptions[] = [];
+        const classDeclarations: SessionAccessOptions[] = [];
         let constructor: Constructor<object> | undefined = handler.target;
         while (constructor && constructor.name) {
-            const classOptions = this.classOptions.get(constructor);
-            if (classOptions) {
-                collected.push(classOptions);
-            }
             const methodOptions = this.methodOptions
                 .get(constructor)
                 ?.get(handler.methodName);
             if (methodOptions) {
-                collected.push(methodOptions);
+                methodDeclarations.push(methodOptions);
+            }
+            const classOptions = this.classOptions.get(constructor);
+            if (classOptions) {
+                classDeclarations.push(classOptions);
             }
             constructor = Object.getPrototypeOf(constructor);
         }
 
-        if (collected.length === 0) {
+        const ranked = [...methodDeclarations, ...classDeclarations];
+        if (ranked.length === 0) {
             return undefined;
         }
         // Preserve the exact single-source record (a lone method or class
         // decorator) rather than normalizing it — callers and tests read
         // its precise shape.
-        if (collected.length === 1) {
-            return collected[0];
+        if (ranked.length === 1) {
+            return ranked[0];
         }
-        return {
-            skipAuthorization: collected.some(
-                (options) => options.skipAuthorization === true,
-            ),
-            roles: collected.flatMap((options) => options.roles ?? []),
-            entitlements: collected.flatMap(
-                (options) => options.entitlements ?? [],
-            ),
+        const resolved: SessionAccessOptions = {
+            skipAuthorization: ranked.find(
+                (options) => options.skipAuthorization !== undefined,
+            )?.skipAuthorization,
         };
+        const roles = ranked.find((options) => options.roles !== undefined);
+        if (roles) {
+            resolved.roles = roles.roles;
+        }
+        const entitlements = ranked.find(
+            (options) => options.entitlements !== undefined,
+        );
+        if (entitlements) {
+            resolved.entitlements = entitlements.entitlements;
+        }
+        return resolved;
     }
 }
 

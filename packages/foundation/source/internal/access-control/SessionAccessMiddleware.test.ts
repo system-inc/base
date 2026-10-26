@@ -25,6 +25,16 @@ import { runSessionAccessMiddleware } from './SessionAccessMiddleware';
 // Decorated fixtures — registered in the metadata registry at import time,
 // exactly as application handlers are.
 
+// A base class whose method carries its own guard, built by a function so
+// the fixtures that extend it can be declared next to the others.
+function makeGuardedMethodBase() {
+    class GuardedMethodBase {
+        @RequireSessionAccess({ roles: ['BaseMethodRole'] })
+        guardedMethod() {}
+    }
+    return GuardedMethodBase;
+}
+
 class OpenService {
     open() {}
 }
@@ -61,6 +71,29 @@ class ClassGatedService {
 class ClassOptionalService {
     @RequireSessionAccess()
     stricterMethod() {}
+}
+
+@RequireSessionAccess({ roles: ['Administrator'] })
+class AdminService {
+    // restates authentication without roles — must keep the class's roles
+    @RequireSessionAccess()
+    restated() {}
+
+    // adds an entitlement requirement on top of the class's roles
+    @RequireSessionAccess({ entitlements: ['premium'] })
+    premium() {}
+
+    // the deliberate "one public method on a guarded class" pattern
+    @WithSessionAccess()
+    publicMethod() {}
+}
+
+@RequireSessionAccess({ roles: ['SubclassRole'] })
+class GuardedSubclassService extends makeGuardedMethodBase() {}
+
+class MethodOverrideService extends makeGuardedMethodBase() {
+    @RequireSessionAccess({ roles: ['OverrideRole'] })
+    override guardedMethod() {}
 }
 
 // Inheritance fixtures — the guard sits on a base class, the subclass is
@@ -346,26 +379,122 @@ describe('runSessionAccessMiddleware', () => {
         );
     });
 
-    it('merges class and method roles any-of and passes the merged options to the provider', async () => {
-        const context = makeRequestContext(
+    it("a method's roles replace the class's rather than widening them", async () => {
+        // a class-only role must not satisfy a method that names its own
+        const classRoleOnly = makeRequestContext(
+            handlerFor(ClassGatedService, 'merged'),
+            { sessionContext: makeSessionContext({ roles: ['ClassRole'] }) },
+        );
+        await expectBaseError(
+            () => runSessionAccessMiddleware(classRoleOnly.requestContext),
+            403,
+            ERROR_CODE_PERMISSION_DENIED,
+            'Required access roles not present.',
+        );
+
+        const methodRole = makeRequestContext(
             handlerFor(ClassGatedService, 'merged'),
             { sessionContext: makeSessionContext({ roles: ['MethodRole'] }) },
         );
-        await runSessionAccessMiddleware(context.requestContext);
-        expect(context.resolveOptions[0]!.roles).toEqual([
-            'ClassRole',
-            'MethodRole',
-        ]);
+        await runSessionAccessMiddleware(methodRole.requestContext);
+        expect(methodRole.resolveOptions[0]!.roles).toEqual(['MethodRole']);
     });
 
-    it('skips authorization when either the class or the method skips it', async () => {
-        // class @WithSessionAccess + method @RequireSessionAccess:
-        // skipAuthorization merges with OR, so the anonymous request passes
+    it('a method @RequireSessionAccess on a @WithSessionAccess class requires a session', async () => {
+        // the class opts out of authorization, the method opts back in —
+        // the method is more specific, so the anonymous request is refused
         const context = makeRequestContext(
             handlerFor(ClassOptionalService, 'stricterMethod'),
             { sessionContext: null },
         );
+        await expectBaseError(
+            () => runSessionAccessMiddleware(context.requestContext),
+            401,
+            ERROR_CODE_AUTHENTICATION_REQUIRED,
+            'User is not authenticated.',
+        );
+    });
+
+    it('a method that states no roles keeps the class roles', async () => {
+        const context = makeRequestContext(
+            handlerFor(AdminService, 'restated'),
+            { sessionContext: makeSessionContext({ roles: ['User'] }) },
+        );
+        await expectBaseError(
+            () => runSessionAccessMiddleware(context.requestContext),
+            403,
+            ERROR_CODE_PERMISSION_DENIED,
+            'Required access roles not present.',
+        );
+        expect(context.resolveOptions[0]).toEqual({
+            skipAuthorization: false,
+            roles: ['Administrator'],
+        });
+    });
+
+    it('a method entitlement requirement adds to the class roles', async () => {
+        const adminWithoutPremium = makeRequestContext(
+            handlerFor(AdminService, 'premium'),
+            {
+                sessionContext: makeSessionContext({
+                    roles: ['Administrator'],
+                }),
+            },
+        );
+        await expectBaseError(
+            () =>
+                runSessionAccessMiddleware(adminWithoutPremium.requestContext),
+            403,
+            ERROR_CODE_INSUFFICIENT_ENTITLEMENTS,
+            'Required entitlement not present.',
+        );
+
+        const premiumWithoutAdmin = makeRequestContext(
+            handlerFor(AdminService, 'premium'),
+            {
+                sessionContext: makeSessionContext({
+                    entitlements: ['premium'],
+                }),
+            },
+        );
+        await expectBaseError(
+            () =>
+                runSessionAccessMiddleware(premiumWithoutAdmin.requestContext),
+            403,
+            ERROR_CODE_PERMISSION_DENIED,
+            'Required access roles not present.',
+        );
+    });
+
+    it('a method @WithSessionAccess opens one method on a guarded class', async () => {
+        const context = makeRequestContext(
+            handlerFor(AdminService, 'publicMethod'),
+            { sessionContext: null },
+        );
         await runSessionAccessMiddleware(context.requestContext);
+        expect(context.resolveOptions[0]!.skipAuthorization).toBe(true);
+    });
+
+    it("a base class's method guard beats the subclass's class guard", async () => {
+        const context = makeRequestContext(
+            handlerFor(GuardedSubclassService, 'guardedMethod'),
+            { sessionContext: makeSessionContext({ roles: ['SubclassRole'] }) },
+        );
+        await expectBaseError(
+            () => runSessionAccessMiddleware(context.requestContext),
+            403,
+            ERROR_CODE_PERMISSION_DENIED,
+            'Required access roles not present.',
+        );
+    });
+
+    it("a subclass's method guard beats the base class's guard on the same method", async () => {
+        const context = makeRequestContext(
+            handlerFor(MethodOverrideService, 'guardedMethod'),
+            { sessionContext: makeSessionContext({ roles: ['OverrideRole'] }) },
+        );
+        await runSessionAccessMiddleware(context.requestContext);
+        expect(context.resolveOptions[0]!.roles).toEqual(['OverrideRole']);
     });
 
     it('enforces a base class’s @RequireSessionAccess on a subclass method', async () => {
@@ -393,9 +522,10 @@ describe('runSessionAccessMiddleware', () => {
         expect(context.resolveOptions[0]!.roles).toEqual(['BaseRole']);
     });
 
-    it('merges class and method options across multiple levels of inheritance', async () => {
+    it('resolves options across multiple levels of inheritance', async () => {
         // GrandchildService -> MiddleService -> GrandparentService, with a
-        // class guard and a method guard both declared on the grandparent.
+        // class guard and a method guard both declared on the grandparent:
+        // the method guard is the more specific, and is found two levels up.
         const context = makeRequestContext(
             handlerFor(GrandchildService, 'gatedMethod'),
             {
@@ -406,7 +536,6 @@ describe('runSessionAccessMiddleware', () => {
         );
         await runSessionAccessMiddleware(context.requestContext);
         expect(context.resolveOptions[0]!.roles).toEqual([
-            'GrandparentRole',
             'GrandparentMethodRole',
         ]);
     });

@@ -38,7 +38,7 @@ export class AccountService {
 
 - Requirements are **any-of** for both `roles` and `entitlements`; an empty or absent list requires only authentication.
 - An anonymous request fails with **401** (`AUTHENTICATION_REQUIRED`); an authenticated one missing the roles fails with **403** (`PERMISSION_DENIED`) — before your handler, before argument deserialization.
-- The decorator works at **class or method** level; class-level requirements merge with per-method ones.
+- The decorator works at **class or method** level, and the **most specific declaration wins**, field by field: a method's decorator beats the class's (and a subclass's beats its base class's). So a method `@WithSessionAccess()` opens one endpoint on a guarded class, a method `@RequireSessionAccess()` on a `@WithSessionAccess` class requires a session, and a method's `roles` _replace_ the class's rather than adding alternatives. A field the method doesn't state — say `roles`, under `@RequireSessionAccess({ entitlements: [...] })` — is still inherited from the class.
 - Inside a guarded handler, the session arrives via `@InjectRequestContext(SessionContextRequestKey)` — typed and guaranteed present.
 
 **`@WithSessionAccess`** is the optional variant: the session loads _if_ present, but anonymous callers pass through — the injected parameter types as `SessionContext | undefined`. Right for endpoints that personalize when signed in.
