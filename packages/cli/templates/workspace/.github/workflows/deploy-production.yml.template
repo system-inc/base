@@ -22,12 +22,19 @@ jobs:
         # cancelled) so we have to filter explicitly.
         if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
+        # Queue production deploys; never cancel one mid-flight, which can
+        # leave some workers on the new release and some on the old.
         concurrency:
             group: deploy-production
-            cancel-in-progress: true
+            cancel-in-progress: false
 
         steps:
+            # Deploy exactly the commit Integration tested. A bare checkout
+            # on workflow_run takes the default branch's latest commit, which
+            # may be newer and untested. (github.sha covers manual dispatch.)
             - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
             - name: Setup Node
               uses: actions/setup-node@v4

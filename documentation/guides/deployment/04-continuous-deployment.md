@@ -22,6 +22,8 @@ npm run base -- test --environment Integration --all-workers
 npm run base -- deploy --environment Production --all-workers
 ```
 
+It checks out **the commit the Integration run tested** (`github.event.workflow_run.head_sha`), not whatever `main` points at by the time it starts, and production deploys queue rather than cancel one another, so a deploy is never stopped halfway through its workers. Workspaces scaffolded before this was fixed should copy those two changes (the checkout `ref` and `cancel-in-progress: false`) into their own `deploy-production.yml`.
+
 Production still enforces its own gates inside the deploy: clean tree (trivially true in CI), per-worker checks, released migrations. Every worker in scope then deploys, binding targets before their binders; wrangler publishes are idempotent, so redeploying an unchanged worker is safe.
 
 ## Getting secrets into CI
