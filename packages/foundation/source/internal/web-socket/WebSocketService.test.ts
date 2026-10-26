@@ -1,7 +1,10 @@
 // Copyright 2026 System, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { BASE_HEADER_WEB_SOCKET_ID } from '@system-inc/base-common/http/HttpHeaders';
+import {
+    BASE_HEADER_WEB_SOCKET_FETCH,
+    BASE_HEADER_WEB_SOCKET_ID,
+} from '@system-inc/base-common/http/HttpHeaders';
 import { Base } from '../../base/Base';
 import { CloudflareInjections } from '../../cloudflare/CloudflareInjections';
 import { BaseInjectionContainer } from '../../dependency-injection/BaseInjectionContainer';
@@ -341,5 +344,61 @@ describe('WebSocketService.connectWebSocketCloudflareDurableObject', () => {
         expect(deleteAllCalls).toBe(0);
         expect(closedSockets).toHaveLength(1);
         expect(closedSockets[0]!.code).toBe(1000);
+    });
+});
+
+describe('WebSocketService.forwardWebSocketEventToTarget', () => {
+    it('relays as this worker with the socket header, never as the client-claimed origin', async () => {
+        const forwarded: Request[] = [];
+        const targetWorker = {
+            fetch: async (request: Request) => {
+                forwarded.push(request);
+                return Response.json({
+                    type: 'response',
+                    status: 'success',
+                    id: 'call-1',
+                    result: null,
+                    __protocol: 'BaseRPC',
+                    __version: '1.0',
+                });
+            },
+        };
+        const base = {
+            configuration: {
+                name: 'chat-worker',
+                getEnvironmentVariable: () => targetWorker,
+            },
+        } as unknown as Base;
+        const service = new WebSocketService(
+            base,
+            { delegates: [] },
+            {} as BaseInjectionContainer,
+        );
+
+        await (
+            service as unknown as {
+                forwardWebSocketEventToTarget: (
+                    event: unknown,
+                    webSocketInfo: unknown,
+                ) => Promise<unknown>;
+            }
+        ).forwardWebSocketEventToTarget(
+            {
+                type: 'forwarding',
+                originatingType: 'subscribe',
+                origin: 'gateway',
+                target: 'ACCOUNTS',
+                arguments: [],
+            },
+            { path: '/ws/chat', socketId: 'socket-1', context: {} },
+        );
+
+        expect(forwarded).toHaveLength(1);
+        expect(new URL(forwarded[0]!.url).hostname).toBe(
+            'chat-worker.base-internal',
+        );
+        expect(forwarded[0]!.headers.get(BASE_HEADER_WEB_SOCKET_FETCH)).toBe(
+            'true',
+        );
     });
 });

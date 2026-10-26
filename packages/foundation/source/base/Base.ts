@@ -295,7 +295,8 @@ export class Base {
      * @param request The incoming platform request.
      * @param executionContext The execution context for the event.
      * @param webSocketInfo WebSocket connection info when the request arrives
-     * over an established WebSocket.
+     * over an established WebSocket. Passing it marks the request's routing
+     * as `'websocket'`, so only the framework's socket dispatch passes it.
      * @returns The response produced by the router.
      */
     async handleRequest(
@@ -534,6 +535,9 @@ export class Base {
             container,
             stopWatch,
             platformDelegate: this.platformDelegate,
+            // only WebSocketService passes socket info, so its presence is
+            // a server-side fact: this RPC came from a client's socket
+            fromWebSocket: webSocketInfo !== undefined,
         });
         context.set(WebSocketInfoRequestContextKey, webSocketInfo);
 

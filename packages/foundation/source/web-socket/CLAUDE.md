@@ -29,7 +29,7 @@ A `WebSocketDelegate` (abstract) handles connections for one endpoint. Its const
 
 ## WebSocket RPC
 
-A delegate's `rpcEndpoint` plus the `WebSocketRpcClientDriver` (see [`rpc/`](../rpc/CLAUDE.md)) let RPC calls be forwarded over a live socket as forwarding events — and `@WebSocketRpc()` marks procedures that are callable only this way (return `Promise<void>`).
+When a delegate doesn't override `onWebSocketEvent`, a client's event `{ type, arguments }` is dispatched as an RPC to procedure `type` on this worker; a `forwarding` event is relayed to the bound worker it names (over the service binding, identifying as **this** worker plus the `base-websocket-fetch` header). Either way the call's routing is `'websocket'`: it reaches `@WebSocketRpc()` procedures (callable only this way; return `Promise<void>`) and `'public'` ones, never `'internal'` ones — the event's `origin` field is client-claimed and never used for trust (see _Visibility_ in [`rpc/`](../rpc/CLAUDE.md)). In the other direction, a delegate's `rpcEndpoint` plus the `WebSocketRpcClientDriver` push RPC-style calls down a live socket as forwarding events.
 
 ## Settings (`WebSocketSettings`)
 

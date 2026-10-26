@@ -8,6 +8,7 @@ import { DefaultConfigurationKey } from '@system-inc/base-common/configuration/N
 import { LogCategory } from '@system-inc/base-common/logging/LogCategory';
 import { Logger } from '@system-inc/base-common/logging/Logger';
 import { EnvironmentVariables } from '../../configuration/EnvironmentVariables';
+import { PlatformType } from '../../configuration/Platform';
 import { DetachedExecutionContext } from '../../internal/execution-context/DetachedExecutionContext';
 import { NodeWebSocketServer } from '../../web-socket/node/NodeWebSocketServer';
 import { BaseWorker } from '../BaseWorker';
@@ -38,7 +39,15 @@ export class BaseWorkerNodeRunner {
     /**
      * Registers fetch as the request handler for the Node.js server, then starts the node server.
      */
-    async start(environmentVariables: EnvironmentVariables): Promise<void> {
+    async start(environment: EnvironmentVariables): Promise<void> {
+        // This runner is the Node platform, whatever the environment says.
+        // Left to the Cloudflare default, request routing would trust the
+        // internal `.base-internal` hostname — which on Node comes straight
+        // from the client's Host header.
+        const environmentVariables: EnvironmentVariables = {
+            ...environment,
+            PLATFORM: PlatformType.Node,
+        };
         if (this.isStarted) {
             throw new Error(
                 'NodeWorker.start() - NodeWorker has already been started.',

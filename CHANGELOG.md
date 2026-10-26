@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **RPC: a WebSocket client can no longer call `internal` procedures.** A
+  socket event's `origin` is whatever the client sends, and the socket
+  dispatch built its RPC request from it — so any client whose upgrade was
+  accepted could name an allowed worker and call procedures marked
+  `visibility: 'internal'`. On Node, a plain HTTP request with
+  `Host: <allowed-worker>.base-internal` did the same. Caller identity
+  (`RequestContext.routing`) now comes only from facts a client can't
+  forge:
+    - Socket-originated RPCs get a new `originType: 'websocket'`, set by
+      the server. They reach `@WebSocketRpc()` procedures and `'public'`
+      ones, never `'internal'` ones — including when a bound worker
+      relays them (relays now identify as the relaying worker, with the
+      `base-websocket-fetch` header the target reads).
+    - `@WebSocketRpc()` is now enforced at runtime: HTTP callers get
+      `NOT_ALLOWED`, and a relayed call must come from a worker on
+      `allowedWorkers`.
+    - The `.base-internal` hostname is trusted only on Cloudflare.
+      `BaseWorkerNodeRunner` now always sets `PLATFORM=Node`.
+    - `RpcCall.meta` (a relayed socket's `WebSocketInfo`) is adopted only
+      from an allowed relaying worker; a public caller could previously
+      claim any socket's identity and context through it.
+
+    **Migration:** a procedure that socket clients call must be marked
+    `@WebSocketRpc()` or have `'public'` visibility. Code that switches on
+    `routing.originType` should handle `'websocket'`.
+
 ## [1.1.1] - 2026-09-14
 
 ### Fixed

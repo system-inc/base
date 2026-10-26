@@ -40,7 +40,6 @@ import {
 import { BaseWebSocket, WebSocketInfo } from '../../web-socket/WebSocketTypes';
 import { BaseExecutionContext } from '../execution-context/BaseExecutionContext';
 import { BaseRequest } from '../request/BaseRequest';
-import { InternalBaseRequest } from '../request/InternalBaseRequest';
 
 export class WebSocketService {
     private readonly delegateSettings: Dictionary<WebSocketDelegateSettings> =
@@ -494,14 +493,15 @@ export class WebSocketService {
         }
 
         try {
-            // if the hostname matches ours, it is to be processed locally
-            const internalHostname = InternalBaseRequest.getInternalHostName(
-                event.origin,
-            );
+            // Dispatch the event as an RPC on this worker. The client's
+            // `event.origin` is never used to build the request: the URL is
+            // a plain (public-shaped) one, and passing `webSocketInfo` to
+            // handleRequest is what marks the call socket-originated — so
+            // it can only reach procedures that accept socket callers.
             const rpcEndpoint =
                 this.base.configuration.rpcServer?.route || DefaultRpcEndpoint;
-            const internalRequest = new Request(
-                getRpcServiceUrl(internalHostname, {
+            const socketRequest = new Request(
+                getRpcServiceUrl(this.base.configuration.name, {
                     endpoint: rpcEndpoint,
                 }),
                 {
@@ -524,7 +524,7 @@ export class WebSocketService {
 
             // create and handle the fetch request with the socket context added
             await this.base.handleRequest(
-                internalRequest,
+                socketRequest,
                 new BaseExecutionContext(performance.now()),
                 webSocketInfo,
             );
@@ -544,11 +544,19 @@ export class WebSocketService {
         if (!isFetcher(targetWorker)) {
             throw new Error('Target worker not found for forwarding event.');
         }
+        // Identify as this worker — the relay — never as the client-supplied
+        // `event.origin`. The WebSocket fetch header tells the target the
+        // call is socket-originated, so it gets socket access, not this
+        // worker's internal access.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const rpcClient = new RpcClient<any>(
-            new FetcherRpcClientDriver(event.origin, targetWorker, {
-                endpoint: event.rpcEndpoint,
-            }),
+            new FetcherRpcClientDriver(
+                this.base.configuration.name,
+                targetWorker,
+                {
+                    endpoint: event.rpcEndpoint,
+                },
+            ),
             {
                 headers: {
                     [BASE_HEADER_WEB_SOCKET_FETCH]: 'true',

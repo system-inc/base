@@ -41,6 +41,7 @@ import {
     UnhandledExceptionEventName,
 } from '../../event/UnhandledExceptionEvent';
 import { resolveRequestContextParams } from '../../request/decorators/RequestContextDecorator';
+import { RoutingInfo } from '../../request/RequestContext';
 import { rpcErrorNotFound } from '../../rpc/error/RpcServerErrorHandling';
 import { RpcVisibility } from '../../rpc/RpcVisibility';
 import { deserialize } from '../../serialization/Deserialize';
@@ -87,8 +88,13 @@ export class RpcDispatcher {
         // set the rpc operation on the request
         request.context.rpc = rpc.procedure;
 
-        // add the web socket info to the request if there is any
-        if (isWebSocketInfo(rpc.meta)) {
+        // Adopt the relayed socket's info only from an allowed worker that
+        // relayed the call. `meta` is part of the body, so from anyone else
+        // it would let the caller claim any socket's identity and context.
+        if (
+            isWebSocketInfo(rpc.meta) &&
+            this.isAllowedRelay(request.context.routing)
+        ) {
             request.context.set(WebSocketInfoRequestContextKey, rpc.meta);
         }
 
@@ -206,15 +212,46 @@ export class RpcDispatcher {
     ): RpcFailure | undefined {
         // Most specific wins: procedure (@Rpc) over service (@RpcService)
         // over the worker's rpc.service settings.
+        const procedure = rpcMetadata.procedures[rpc.procedure];
         const visibility =
-            rpcMetadata.procedures[rpc.procedure]?.options?.visibility ??
+            procedure?.options?.visibility ??
             rpcMetadata.options?.visibility ??
             this.visibility;
 
-        if (this.runtime.mode.isDefault && visibility === 'internal') {
+        if (!this.runtime.mode.isDefault) {
+            return undefined;
+        }
+        const routingInfo = request.context.routing;
+
+        // @WebSocketRpc procedures are for socket clients only — from this
+        // worker's own sockets, or relayed by an allowed worker.
+        if (procedure?.webSocket) {
+            if (
+                routingInfo.originType !== 'websocket' ||
+                (routingInfo.origin !== undefined &&
+                    !this.isAllowedRelay(routingInfo))
+            ) {
+                const message = `Invalid RPC request - WebSocket access only.`;
+                Logger.warn(LogCategory.Rpc, message);
+                return rpcError(rpc, RPC_ERROR_CODE_NOT_ALLOWED, message);
+            }
+            return undefined;
+        }
+
+        // A socket client is never an internal caller, whoever relays it:
+        // beyond @WebSocketRpc it reaches only what the public can.
+        if (routingInfo.originType === 'websocket') {
+            if (visibility !== 'public') {
+                const message = `Invalid RPC request - Not callable over a WebSocket.`;
+                Logger.warn(LogCategory.Rpc, message);
+                return rpcError(rpc, RPC_ERROR_CODE_NOT_ALLOWED, message);
+            }
+            return undefined;
+        }
+
+        if (visibility === 'internal') {
             // TODO decide if these errors are too detailed
             // make sure the request is an internal request
-            const routingInfo = request.context.routing;
             if (routingInfo.originType !== 'internal') {
                 const message = `Invalid RPC request - Internal access only.`;
                 Logger.warn(LogCategory.Rpc, message);
@@ -238,6 +275,19 @@ export class RpcDispatcher {
 
         // if we get this far, the RPC is allowed
         return undefined;
+    }
+
+    /**
+     * Whether the call was relayed from a client socket by a worker on the
+     * `allowedWorkers` list — the only caller whose socket identity
+     * (`rpc.meta`) is believed.
+     */
+    private isAllowedRelay(routingInfo: RoutingInfo): boolean {
+        return (
+            routingInfo.originType === 'websocket' &&
+            routingInfo.origin !== undefined &&
+            this.allowedWorkers.includes(routingInfo.origin)
+        );
     }
 
     private async runRemoteProcedure(
