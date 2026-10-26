@@ -27,6 +27,8 @@ const all = await this.users.find(); // everything
 
 A bare value in `where` means equality. Multiple keys combine with AND.
 
+A key whose value is `undefined` is **no filter at all** — handy for optional filters (`{ status: input.status }` matches any status when none was given). The flip side: if a scoping value such as a tenant or owner id is unexpectedly `undefined`, the read returns rows across every tenant. Check required scoping values before querying. (Writes by condition refuse `undefined` outright — see [Write Data](./05-write-data.md#bulk-writes-by-condition).)
+
 ## Filter functions
 
 Anything beyond equality is an imported filter function — one import per operator, so your bundle only carries what you use:

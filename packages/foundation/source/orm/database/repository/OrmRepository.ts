@@ -22,10 +22,7 @@ import { OrmTimeSeriesResult } from '../../interfaces/result/OrmTimeSeriesResult
 import { OrmUpdateResult } from '../../interfaces/result/OrmUpdateResult';
 import { getPrimaryKeyColumns } from '../../metadata/OrmPrimaryKeyInfo';
 import { ormRequireTable } from '../../metadata/OrmSchemaRegistry';
-import {
-    OrmTableMetadata,
-    requireTruncatable,
-} from '../../metadata/OrmTableMetadata';
+import { OrmTableMetadata } from '../../metadata/OrmTableMetadata';
 import { OrmSettings } from '../../settings/OrmSettings';
 import { OrmAdapterType } from '../adapter/OrmAdapterType';
 import { OrmDatabaseImpl } from '../internal/OrmDatabaseImpl';
@@ -331,13 +328,10 @@ export class OrmRepository<EntityType extends OrmTrackingEntity> {
      * the intent visible in code review — this method cannot be called
      * without spelling out that a full-table wipe is intended.
      */
-    async truncate(_options: {
+    async truncate(options: {
         confirm: true;
     }): Promise<OrmDeleteResult<EntityType>> {
-        const metadata = ormRequireTable(this.target);
-        requireTruncatable(metadata);
-        const adapter = await this.db.getAdapter();
-        return adapter.truncate<EntityType>(metadata);
+        return this.db.truncate<EntityType>(this.target, options);
     }
 
     /**
@@ -351,10 +345,10 @@ export class OrmRepository<EntityType extends OrmTrackingEntity> {
         column: keyof EntityType & string,
         value: number = 1,
     ): Promise<OrmUpdateResult<EntityType>> {
-        const metadata = ormRequireTable(this.target);
-        const adapter = await this.db.getAdapter();
-        return adapter.increment<EntityType>(
-            metadata,
+        // Through the database, not the adapter: it refuses unscoped
+        // conditions and stamps update-date columns.
+        return this.db.increment<EntityType>(
+            this.target,
             conditions,
             column,
             value,
@@ -372,10 +366,8 @@ export class OrmRepository<EntityType extends OrmTrackingEntity> {
         column: keyof EntityType & string,
         value: number = 1,
     ): Promise<OrmUpdateResult<EntityType>> {
-        const metadata = ormRequireTable(this.target);
-        const adapter = await this.db.getAdapter();
-        return adapter.decrement<EntityType>(
-            metadata,
+        return this.db.decrement<EntityType>(
+            this.target,
             conditions,
             column,
             value,

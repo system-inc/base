@@ -68,7 +68,7 @@ do {
 
 `order` picks which matching rows go first (oldest, here); without `limit` it has no effect. The same options work on `update`. Every Base backend accepts them: MySQL natively, and Durable Object, D1, and better-sqlite3 SQLite are all compiled with `SQLITE_ENABLE_UPDATE_DELETE_LIMIT`.
 
-Empty conditions are refused (that would address every row); clear a table with `truncate` instead.
+Empty conditions are refused (that would address every row); clear a table with `truncate` instead. So is an `undefined` value anywhere in the conditions, including inside a filter: `delete(Doc, { tenantId, status: 'archived' })` with `tenantId` unset would otherwise drop that condition and delete archived rows for every tenant. The error names the key; pass a defined value, `null` to match NULL, or omit the key. The same guards apply to `updateBatch`, `deleteBatch`, `writeBatch`'s `deleteWhere`, and `increment`/`decrement` (on the database and the repository).
 
 ## Batch writes
 

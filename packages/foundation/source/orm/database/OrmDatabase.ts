@@ -112,7 +112,9 @@ export interface OrmDatabase {
     /**
      * Updates every row matching `conditions`, or at most `options.limit`
      * of them (in `options.order`) when batching a wide sweep — see
-     * `OrmUpdateOptions`. Empty conditions are refused.
+     * `OrmUpdateOptions`. Empty conditions are refused, as is an `undefined`
+     * value anywhere in them — it would drop that condition and widen the
+     * update.
      */
     update<EntityType extends OrmTrackingEntity>(
         target: Constructor<EntityType>,
@@ -155,8 +157,9 @@ export interface OrmDatabase {
     /**
      * Deletes every row matching `conditions`, or at most `options.limit`
      * of them (in `options.order`) when batching a bulk delete — see
-     * `OrmDeleteOptions` for the loop shape. Empty conditions are refused;
-     * use `truncate` to clear a table.
+     * `OrmDeleteOptions` for the loop shape. Empty conditions are refused
+     * (use `truncate` to clear a table), as is an `undefined` value anywhere
+     * in them — it would drop that condition and widen the delete.
      */
     delete<EntityType extends OrmTrackingEntity>(
         target: Constructor<EntityType>,

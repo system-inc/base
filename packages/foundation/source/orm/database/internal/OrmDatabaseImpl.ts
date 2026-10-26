@@ -47,23 +47,28 @@ import {
 import { OrmTransaction } from '../transaction/OrmTransaction';
 
 /**
- * Guards condition-based mutations against accidentally addressing every
- * row. A conditions object that is empty — or whose every value is
- * `undefined` (e.g. `{ id: someVar }` where `someVar` slipped through as
- * undefined) — has no scope at all. For delete that would compile to a
- * no-WHERE delete-all; for update/increment/decrement the adapter used
- * to silently NO-OP with a success-shaped `{ affectedRows: 0 }` — a
- * migrated bulk mutation quietly doing nothing. Fail closed either way.
+ * Guards condition-based mutations against addressing rows they were
+ * never meant to touch.
+ *
+ * An empty conditions object has no scope at all: for delete it would
+ * compile to a no-WHERE delete-all, and for update/increment/decrement
+ * the adapter would silently NO-OP with a success-shaped
+ * `{ affectedRows: 0 }` — a migrated bulk mutation quietly doing nothing.
  * Clearing a whole table is the explicit, opt-in job of
  * `truncate({ confirm: true })`; an intentional all-rows update states
  * its scope explicitly (e.g. `{ id: notEquals(null) }`).
+ *
+ * An `undefined` value anywhere in the conditions is refused too. The
+ * where builder treats it as "no condition" — right for optional-filter
+ * reads, but in a write it means a value slipped through unset, and
+ * dropping it widens the write: `delete({ tenantId: maybeUndefined,
+ * status: 'archived' })` would delete archived rows for every tenant.
+ * The walk covers filter operands (`equals(x)`, `and(...)`) and relation
+ * predicates, where a dropped condition widens the same way. Pass `null`
+ * to match NULL, or omit the key.
  */
 function assertScopedConditions(conditions: object, verb: string): void {
-    const entries = Object.entries(conditions);
-    if (
-        entries.length === 0 ||
-        entries.every(([, value]) => value === undefined)
-    ) {
+    if (Object.keys(conditions).length === 0) {
         throw new Error(
             `Refusing to ${verb} with empty conditions — this would address ` +
                 'every row. Pass at least one defined condition' +
@@ -72,6 +77,47 @@ function assertScopedConditions(conditions: object, verb: string): void {
                     : '.'),
         );
     }
+    const undefinedPaths = findUndefinedConditionPaths(conditions, '');
+    if (undefinedPaths.length > 0) {
+        throw new Error(
+            `Refusing to ${verb} with an undefined condition value for ` +
+                `${undefinedPaths.map((path) => `'${path}'`).join(', ')} — ` +
+                `an undefined value is dropped from the WHERE, widening the ` +
+                `${verb} to rows it should exclude. Pass a defined value, ` +
+                'null to match NULL, or omit the key.',
+        );
+    }
+}
+
+/**
+ * Paths (`tenantId`, `tenantId.value[1]`, `author.accountId`) of every
+ * `undefined` reachable through the plain objects and arrays of a
+ * conditions tree. Anything else — SQL fragments, dates, buffers — is a
+ * leaf, not descended into.
+ */
+function findUndefinedConditionPaths(value: unknown, path: string): string[] {
+    if (value === undefined) {
+        return [path];
+    }
+    if (Array.isArray(value)) {
+        return value.flatMap((item, index) =>
+            findUndefinedConditionPaths(item, `${path}[${index}]`),
+        );
+    }
+    if (!isPlainObject(value)) {
+        return [];
+    }
+    return Object.entries(value).flatMap(([key, item]) =>
+        findUndefinedConditionPaths(item, path ? `${path}.${key}` : key),
+    );
+}
+
+function isPlainObject(value: unknown): value is object {
+    if (typeof value !== 'object' || value === null) {
+        return false;
+    }
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
 }
 
 /**
@@ -566,6 +612,9 @@ export class OrmDatabaseImpl<
         target: Constructor<EntityType>,
         conditions: ReadonlyArray<OrmPartialEntity<EntityType>>,
     ): Promise<OrmDeleteResult<EntityType>> {
+        for (const entryConditions of conditions) {
+            assertScopedConditions(entryConditions, 'delete');
+        }
         const adapter = await this.getAdapter();
         const metadata = this.requireOwnEntity(target);
         return adapter.deleteBatch(metadata, conditions);
