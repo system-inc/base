@@ -88,6 +88,26 @@ await client.call().receiveMessage(payload);
 
 On Cloudflare each socket lives in its own Durable Object (keyed by the socket id); the delegate's helpers route through it transparently, worker-side or DO-side.
 
+## Call procedures from the client
+
+Unless your delegate overrides `onWebSocketEvent`, an event a client sends is dispatched as an RPC: `type` names the procedure and `arguments` are its arguments. Mark the procedures clients may call this way with `@WebSocketRpc()`:
+
+```ts
+@RpcService()
+export class ChatRpc {
+    @WebSocketRpc()
+    async subscribe(@RpcArgument(() => String) room: string): Promise<void> {
+        // ...
+    }
+}
+```
+
+```ts
+socket.send(JSON.stringify({ type: 'subscribe', arguments: ['general'] }));
+```
+
+A socket client can call `@WebSocketRpc()` procedures and `'public'` ones — never `'internal'` ones, which stay reserved for bound workers. `@WebSocketRpc()` procedures, in turn, can't be called over plain HTTP. The procedure sees the socket's `WebSocketInfo` (and its context) as the server recorded it at connect time; nothing in the client's message, including its `origin` field, is trusted as identity.
+
 ## Session context on sockets
 
 Modules can map request-context values onto the socket's context at connect time — this is how a socket knows which session opened it:

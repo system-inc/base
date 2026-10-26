@@ -15,7 +15,7 @@ export class BillingRpc {
 }
 ```
 
-List the class in a module's (or the worker's) `services` — its `@RpcService` decorator sorts it into the RPC surface. `@RpcService(options?)` marks the class (`DecoratorRegistry` + RPC metadata); `options.visibility` sets service-level visibility. `@Rpc(returnType?, options?)` (or `@Rpc(options)`) marks a method as a remote procedure; the optional `TypeFunc` drives result serialization (bare `@Rpc()` returns plain JSON), and `options.visibility` overrides visibility for that one procedure. (Procedure renaming and description options were deliberately dropped: a renamed procedure would fall out of the shared-interface typing, and descriptions belong in TSDoc.) `@RpcArgument(typeFunc, options?)` describes an argument — the `TypeFunc` is **required**; it drives deserialization and, for class types, validation. An undecorated parameter receives the raw JSON as-is. `@WebSocketRpc()` marks a push procedure intended for delivery over a live WebSocket; the `Promise<void>` return constraint is compile-time only (the dispatcher does not enforce socket-only at runtime).
+List the class in a module's (or the worker's) `services` — its `@RpcService` decorator sorts it into the RPC surface. `@RpcService(options?)` marks the class (`DecoratorRegistry` + RPC metadata); `options.visibility` sets service-level visibility. `@Rpc(returnType?, options?)` (or `@Rpc(options)`) marks a method as a remote procedure; the optional `TypeFunc` drives result serialization (bare `@Rpc()` returns plain JSON), and `options.visibility` overrides visibility for that one procedure. (Procedure renaming and description options were deliberately dropped: a renamed procedure would fall out of the shared-interface typing, and descriptions belong in TSDoc.) `@RpcArgument(typeFunc, options?)` describes an argument — the `TypeFunc` is **required**; it drives deserialization and, for class types, validation. An undecorated parameter receives the raw JSON as-is. `@WebSocketRpc()` marks a procedure a client calls over a live WebSocket (fire-and-forget; the `Promise<void>` return constraint is compile-time). Socket-only access **is** enforced at runtime — see _Visibility_.
 
 `Base` serves the service on a POST route at `rpcServer.route ?? DefaultRpcEndpoint` and defers to the lazy `RpcDispatcher`.
 
@@ -33,6 +33,13 @@ Per call, the dispatcher:
 ### Visibility (`RpcVisibility`)
 
 `'public'` — callable from a public route. `'internal'` (default) — callable only from a **bound worker**; `RpcServiceSettings.allowedWorkers` lists which caller worker **names** may call in. Precedence, most specific wins: per procedure (`@Rpc({ visibility })`) → per service (`@RpcService(options)`) → the worker's `rpc.service` settings. In local development mode everything is effectively `'public'`.
+
+The caller's identity is `RequestContext.routing` (`BaseRequestContext.resolveRouting`), built only from facts a client can't forge:
+
+- **`'internal'`** — the `<worker>.base-internal` hostname a service binding / Durable Object stub delivers, trusted **on Cloudflare only** (on Node the hostname is the client's `Host` header, so it's always `'public'` there; `BaseWorkerNodeRunner` pins `PLATFORM=Node`).
+- **`'websocket'`** — an RPC a client sent over a socket: flagged by `WebSocketService` when it dispatches (never from the client's message), or relayed by a bound worker carrying the `base-websocket-fetch` header (`origin` = the relaying worker). A header can only downgrade a bound caller, so it's ignored on public requests.
+
+A `'websocket'` caller reaches `@WebSocketRpc()` procedures and `'public'` ones — never `'internal'`, whoever relays it. `@WebSocketRpc()` procedures accept nothing else (HTTP callers get `NOT_ALLOWED`), and a relayed call must come from a worker on `allowedWorkers`. `RpcCall.meta` (the relayed socket's `WebSocketInfo`) is adopted only from such an allowed relay; from anyone else it's ignored, since a body field would let the caller claim any socket's identity and context.
 
 ## Client: calling another worker's service
 

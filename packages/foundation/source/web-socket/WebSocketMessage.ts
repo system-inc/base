@@ -14,7 +14,9 @@ export interface WebSocketEvent {
     /**
      * The origin of the event.
      *
-     * This is the worker that the event originated from.
+     * This is the worker that the event originated from. On an event a
+     * client sends, it is whatever the client claims — informational
+     * only, and never used to authorize anything.
      */
     readonly origin: string;
 

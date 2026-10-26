@@ -19,6 +19,11 @@ export interface RpcHandlerMetadata {
     returnType?: TypeFunc;
     args: Record<number, RpcArgumentMetadata | undefined>;
     options?: RpcOptions;
+    /**
+     * Set by `@WebSocketRpc()`: the procedure is callable only by a client
+     * over a WebSocket, never over HTTP.
+     */
+    webSocket?: boolean;
 }
 
 export interface RpcServiceMetadata {
@@ -75,6 +80,7 @@ export interface AddRpcHandlerMetadata {
     readonly handlerName: string;
     readonly returnType?: TypeFunc;
     readonly options?: RpcOptions;
+    readonly webSocket?: boolean;
 }
 
 /**
@@ -98,11 +104,13 @@ export function rpcMetadataAddHandler(
             returnType: procedureMetadata.returnType,
             args: {},
             options: procedureMetadata.options,
+            webSocket: procedureMetadata.webSocket,
         };
         rpcMetadata.procedures[procedureMetadata.handlerName] = rpcProcedure;
     } else {
         rpcProcedure.returnType = procedureMetadata.returnType;
         rpcProcedure.options = procedureMetadata.options;
+        rpcProcedure.webSocket = procedureMetadata.webSocket;
     }
 
     if (!HANDLER_LOOKUP.has(procedureMetadata.handlerName)) {

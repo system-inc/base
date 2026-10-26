@@ -34,7 +34,7 @@ Framework-owned fields are `readonly`, because the context is a view, not a grab
 | `cookies`                               | parsed request cookies as a readonly record                      |
 | `ipAddress`, `userAgent`                | caller details                                                   |
 | `isRpc`, `rpc` / `isGraphQL`, `graphql` | which dispatcher is running, with dispatch-specific info         |
-| `isInternal`, `routing`                 | whether the call came from a bound worker, and from whom         |
+| `isInternal`, `routing`                 | public, bound-worker, or WebSocket caller — and which worker     |
 | `handler`                               | the resolved handler once routing completes                      |
 | `container`                             | the request's DI container                                       |
 | `response`                              | write response headers/cookies from anywhere (below)             |

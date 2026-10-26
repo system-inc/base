@@ -1,7 +1,10 @@
 // Copyright 2026 System, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { HTTP_HEADER_USER_AGENT } from '@system-inc/base-common/http/HttpHeaders';
+import {
+    BASE_HEADER_WEB_SOCKET_FETCH,
+    HTTP_HEADER_USER_AGENT,
+} from '@system-inc/base-common/http/HttpHeaders';
 import { DefaultRpcEndpoint } from '@system-inc/base-common/rpc/protocol/DefaultRpcEndpoint';
 import type { StopWatch } from '@system-inc/base-common/time/StopWatch';
 import { BaseHandler } from '@system-inc/base-common/type/BaseHandler';
@@ -26,6 +29,11 @@ export interface RequestContextArgs<PlatformType = unknown> {
     container: BaseInjectionContainer;
     stopWatch: StopWatch;
     platformDelegate: BaseWorkerPlatformDelegate<PlatformType>;
+    /**
+     * True when `WebSocketService` dispatches an RPC a client sent over a
+     * socket this worker owns. Set by the server only.
+     */
+    fromWebSocket?: boolean;
 }
 
 /**
@@ -194,23 +202,45 @@ export class BaseRequestContext<
         if (this._routing) {
             return this._routing;
         }
-
-        const url = new URL(this.url);
-        const isInternal = url.hostname.endsWith(
-            InternalBaseRequest.HostNameSuffix,
-        );
-        const origin = url.host.substring(
-            0,
-            url.hostname.indexOf(InternalBaseRequest.HostNameSuffix),
-        );
-        this._routing = {
-            originType: isInternal ? 'internal' : 'public',
-            origin: isInternal ? origin : undefined,
-        };
-
+        this._routing = this.resolveRouting();
         return this._routing;
     }
     private _routing: RoutingInfo | undefined = undefined;
+
+    /**
+     * Derives {@link RoutingInfo} from facts the caller can't forge.
+     *
+     * A socket-originated call is flagged by `WebSocketService` when it
+     * dispatches, never read from the client's message. The internal
+     * hostname is trusted only on Cloudflare, where nothing but a service
+     * binding or Durable Object stub can deliver one — public traffic is
+     * routed by its real host. On Node the URL is built from the client's
+     * `Host` header, so the suffix proves nothing there. A bound worker
+     * relaying a socket call marks it with the WebSocket fetch header; a
+     * header can only downgrade a caller, so it is honored from bound
+     * workers alone.
+     */
+    private resolveRouting(): RoutingInfo {
+        if (this.fromWebSocket) {
+            return { originType: 'websocket' };
+        }
+        const hostname = new URL(this.url).hostname;
+        const suffix = InternalBaseRequest.HostNameSuffix;
+        const origin = hostname.slice(0, -suffix.length);
+        if (
+            !this.configuration.runtime.platform.isCloudflare ||
+            !hostname.endsWith(suffix) ||
+            origin.length === 0
+        ) {
+            return { originType: 'public' };
+        }
+        if (this.headers.has(BASE_HEADER_WEB_SOCKET_FETCH)) {
+            return { originType: 'websocket', origin };
+        }
+        return { originType: 'internal', origin };
+    }
+
+    private readonly fromWebSocket: boolean;
 
     private _extensions: Map<string, unknown> | undefined = undefined;
 
@@ -244,6 +274,9 @@ export class BaseRequestContext<
         this.configuration = args.configuration;
         this.container = args.container;
         this.stopWatch = args.stopWatch;
+
+        // Routing
+        this.fromWebSocket = args.fromWebSocket ?? false;
     }
 
     /**

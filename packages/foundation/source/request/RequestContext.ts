@@ -12,8 +12,20 @@ import { RequestContextKey } from './RequestContextKey';
 import { RequestOrigin } from './RequestOrigin';
 import { ResponseWriter } from './ResponseWriter';
 
+/**
+ * Where a request came from, as established by the framework — never by
+ * anything the caller sends.
+ *
+ * - `'public'` — an ordinary request from the outside world.
+ * - `'internal'` — delivered by a Cloudflare service binding or Durable
+ *   Object stub; `origin` is the calling worker's name.
+ * - `'websocket'` — an RPC a client sent over an established WebSocket.
+ *   `origin` is unset when this worker owns the socket, or the forwarding
+ *   worker's name when another worker relayed the call over a binding.
+ *   A socket-originated call is never `'internal'`, whoever relays it.
+ */
 export interface RoutingInfo {
-    readonly originType: 'public' | 'internal';
+    readonly originType: 'public' | 'internal' | 'websocket';
     readonly origin?: string;
 }
 
