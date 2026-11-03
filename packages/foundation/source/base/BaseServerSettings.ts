@@ -54,6 +54,16 @@ interface SharedServerSettings {
     host?: string;
 
     /**
+     * Whether the Node runner fires scheduled executables on their cron
+     * triggers. Cloudflare runs each cron once however many instances
+     * serve the worker, but every Node instance runs its own schedule —
+     * enable it on one instance of a horizontally scaled deployment.
+     *
+     * @default true
+     */
+    scheduled?: boolean;
+
+    /**
      * Maximum time in milliseconds that the server will wait for a
      * request to complete before aborting it.
      *

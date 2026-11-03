@@ -141,6 +141,8 @@ export class DevelopCommand implements yargs.CommandModule {
                         baseWorkerProject,
                         environment,
                         runConfigName,
+                        // presence, as for wrangler: the flag takes no value
+                        Object.keys(args).includes('test-scheduled'),
                     );
                 } catch (error) {
                     console.error('Error during develop:', error);
@@ -159,8 +161,14 @@ export class DevelopCommand implements yargs.CommandModule {
         worker: BaseWorkerProject,
         environment: string,
         runConfig: string,
+        testScheduled: boolean,
     ): Promise<void> {
         console.log('Running development server for Node.js');
+        if (testScheduled) {
+            console.log(
+                'TEST SCHEDULED: use "http://localhost:[PORT]/__scheduled?cron=*+*+*+*+*" to test.',
+            );
+        }
         // The launcher self-registers ts-node so the dynamic `import()` of the
         // worker's `.ts` entry resolves at runtime.
         const launcherPath = resolveNodeLauncherPath();
@@ -179,6 +187,7 @@ export class DevelopCommand implements yargs.CommandModule {
                     ENVIRONMENT: environment,
                     EXECUTION_MODE: ExecutionModeType.Local,
                     RUN_CONFIG: runConfig,
+                    ...(testScheduled && { TEST_SCHEDULED: 'true' }),
                     // Worker-specific environment variables (env.toml,
                     // wrangler.toml [env.*.vars]) are loaded by the
                     // launcher itself via `BaseWorkerProject.loadEnvironmentVariables`.

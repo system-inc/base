@@ -17,7 +17,7 @@ Options you'll actually use:
 
 - **`--run-config <name>`** (`-c`): use a different named `server` configuration than `'@default'`.
 - **`--remote`**: develop against real resources on Cloudflare's network instead of local simulations.
-- **`--test-scheduled`**: enables triggering cron handlers by hand; prints the `http://localhost:<port>/__scheduled?cron=...` URL to hit.
+- **`--test-scheduled`**: enables triggering cron handlers by hand; prints the `http://localhost:<port>/__scheduled?cron=...` URL to hit. Works on both platforms.
 - **`--persist-to <dir>`**: override where local D1/KV/R2/DO state lives (defaults to the workspace's `base.persistTo`).
 
 HTTPS and a custom host come from settings too: `server: { '@default': { protocol: 'https', keyPath, certificatePath, host } }`.

@@ -7,11 +7,18 @@ import { AddressInfo } from 'net';
 import { createServerAdapter } from '@whatwg-node/server';
 
 import { DefaultConfigurationKey } from '@system-inc/base-common/configuration/NamedConfiguration';
+import {
+    CRON_ANY_TRIGGER,
+    cronExpressionIsValid,
+} from '@system-inc/base-common/cron/CronExpression';
 import { LogCategory } from '@system-inc/base-common/logging/LogCategory';
 import { Logger } from '@system-inc/base-common/logging/Logger';
+import { getBaseMetadata } from '../../base/BaseMetadata';
+import { BaseConfiguration } from '../../configuration/BaseConfiguration';
 import { EnvironmentVariables } from '../../configuration/EnvironmentVariables';
 import { PlatformType } from '../../configuration/Platform';
 import { DetachedExecutionContext } from '../../internal/execution-context/DetachedExecutionContext';
+import { CronRun, CronScheduler } from '../../internal/scheduled/CronScheduler';
 import { NodeWebSocketServer } from '../../web-socket/node/NodeWebSocketServer';
 import { BaseWorker } from '../BaseWorker';
 import { BaseWorkerDelegate } from '../BaseWorkerDelegate';
@@ -24,12 +31,21 @@ const DefaultPort = 8787; // 8787 to match wrangler default port
 const DefaultRequestTimeout = 30_000; // 30 seconds
 
 let _delegate: BaseWorkerDelegate | null = null;
+/**
+ * The started runners, which a shutdown signal stops.
+ */
+const _runners = new Set<BaseWorkerNodeRunner>();
 
 /**
- * Creates a nodejs server and runs the worker on it.
+ * Creates a nodejs server and runs the worker on it, and fires the
+ * worker's scheduled executables on their cron triggers (Node has no cron
+ * service of its own).
  */
 export class BaseWorkerNodeRunner {
     private httpServer: Server | undefined = undefined;
+    private scheduler: CronScheduler | undefined = undefined;
+    private stopping: Promise<void> | undefined = undefined;
+    private requestTimeout = DefaultRequestTimeout;
     private readonly webSocketServer: NodeWebSocketServer;
 
     protected isStarted: boolean = false;
@@ -57,15 +73,7 @@ export class BaseWorkerNodeRunner {
         }
 
         this.isStarted = true;
-
-        const serverAdapter = createServerAdapter(async (request, _env) => {
-            // TODO forward requests for queues and cron jobs to the entrypoint
-            return await this.worker.fetch(
-                request,
-                environmentVariables,
-                new DetachedExecutionContext(),
-            );
-        });
+        _runners.add(this);
 
         // Resolve server settings from the named configuration
         const runConfigName = environmentVariables.RUN_CONFIG
@@ -102,9 +110,41 @@ export class BaseWorkerNodeRunner {
             }
         }
 
+        // a scheduled run goes through the same entry point Cloudflare's
+        // cron service calls, so it runs on a @scheduled container
+        const runScheduled: CronRun = (cron, scheduledTime) =>
+            this.worker.scheduled(
+                nodeScheduledEvent(cron, scheduledTime),
+                environmentVariables,
+                new DetachedExecutionContext(),
+            );
+        // validated before binding, so a bad trigger fails start()
+        const triggers = scheduledTriggers(
+            base.configuration,
+            serverConfig?.scheduled,
+        );
+        const testScheduled =
+            environmentVariables.TEST_SCHEDULED === 'true' &&
+            base.configuration.runtime.mode.isLocal;
+
+        const serverAdapter = createServerAdapter(async (request, _env) => {
+            if (
+                testScheduled &&
+                new URL(request.url).pathname === '/__scheduled'
+            ) {
+                return runTestScheduled(new URL(request.url), runScheduled);
+            }
+            return await this.worker.fetch(
+                request,
+                environmentVariables,
+                new DetachedExecutionContext(),
+            );
+        });
+
         // setup the server and start listening
         const requestTimeout =
             serverConfig?.requestTimeout ?? DefaultRequestTimeout;
+        this.requestTimeout = requestTimeout;
         // whatwg-node's adapter returns a Promise but writes the response
         // itself; Node's createServer expects a void-returning handler.
         // The shim aligns the signatures and discards the adapter's
@@ -137,23 +177,145 @@ export class BaseWorkerNodeRunner {
         );
         Logger.info(LogCategory.Base, 'Request timeout: %dms', requestTimeout);
 
+        if (triggers.length > 0) {
+            this.scheduler = new CronScheduler(triggers, runScheduled);
+            this.scheduler.start();
+            Logger.info(
+                LogCategory.Scheduled,
+                'Firing cron triggers (UTC): %s',
+                triggers.join(', '),
+            );
+        }
+        if (testScheduled) {
+            Logger.info(
+                LogCategory.Scheduled,
+                'Fire a trigger by hand: GET /__scheduled?cron=<expression>',
+            );
+        }
+
         await _delegate?.onStart?.();
     }
 
     /**
-     * Stops accepting connections and closes the Node.js server, resolving
-     * once it has closed. Safe to call when the runner never started.
+     * Stops the runner: cancels the cron timers, stops accepting
+     * connections, then waits for in-flight scheduled runs and requests —
+     * up to the request timeout, after which remaining connections are
+     * closed. Idempotent, and safe to call when the runner never started.
      */
-    async stop(): Promise<void> {
+    stop(): Promise<void> {
+        this.stopping ??= this.shutdown();
+        return this.stopping;
+    }
+
+    private async shutdown(): Promise<void> {
+        _runners.delete(this);
+        const draining: Promise<unknown>[] = [];
+        const scheduler = this.scheduler;
         const httpServer = this.httpServer;
-        if (!httpServer?.listening) {
+        this.scheduler = undefined;
+        this.httpServer = undefined;
+
+        if (scheduler) {
+            draining.push(scheduler.stop());
+        }
+        if (httpServer?.listening) {
+            draining.push(once(httpServer, 'close'));
+            httpServer.close();
+            httpServer.closeIdleConnections();
+        }
+        if (draining.length === 0) {
             return;
         }
-        this.httpServer = undefined;
-        const closed = once(httpServer, 'close');
-        httpServer.close();
-        httpServer.closeIdleConnections();
-        await closed;
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const timedOut = await Promise.race([
+            Promise.allSettled(draining).then(() => false),
+            new Promise<boolean>((resolve) => {
+                timer = setTimeout(() => resolve(true), this.requestTimeout);
+            }),
+        ]);
+        clearTimeout(timer);
+        if (timedOut) {
+            Logger.warn(
+                LogCategory.Base,
+                'Shutdown waited %dms for in-flight work; closing remaining connections.',
+                this.requestTimeout,
+            );
+            httpServer?.closeAllConnections();
+        }
+    }
+}
+
+/**
+ * The cron triggers this runner fires: `scheduled.triggers`, or by default
+ * every cron expression a registered executable is registered against.
+ * None when no executables are registered or the run config sets
+ * `scheduled: false`.
+ */
+function scheduledTriggers(
+    configuration: BaseConfiguration,
+    enabled: boolean | undefined,
+): string[] {
+    const scheduled = configuration.scheduled;
+    if (!scheduled || enabled === false) {
+        return [];
+    }
+    const triggers =
+        scheduled.triggers ??
+        getBaseMetadata().scheduled.getTriggersFor(scheduled.executables);
+    for (const trigger of triggers) {
+        if (trigger === CRON_ANY_TRIGGER || !cronExpressionIsValid(trigger)) {
+            throw new Error(
+                `BaseWorkerNodeRunner.start() - scheduled.triggers has '${trigger}', which isn't a cron expression the runner can schedule.`,
+            );
+        }
+    }
+    if (triggers.length === 0) {
+        Logger.warn(
+            LogCategory.Scheduled,
+            'Scheduled executables are registered, but no cron trigger fires them. Set scheduled.triggers to fire CRON_ANY_TRIGGER executables on Node.',
+        );
+    }
+    return triggers;
+}
+
+/**
+ * The event Cloudflare's cron service would deliver, for a trigger the
+ * runner fires itself. `noRetry()` is a no-op: Node never retries a run.
+ */
+function nodeScheduledEvent(
+    cron: string,
+    scheduledTime: number,
+): ScheduledEvent {
+    return {
+        type: 'scheduled',
+        cron,
+        scheduledTime,
+        noRetry: () => {},
+    } as unknown as ScheduledEvent;
+}
+
+/**
+ * Serves `/__scheduled?cron=<expression>` in local mode under `base
+ * develop --test-scheduled`, as `wrangler dev --test-scheduled` does:
+ * fires the trigger now and answers once it completes.
+ */
+async function runTestScheduled(url: URL, run: CronRun): Promise<Response> {
+    const cron = url.searchParams.get('cron');
+    if (!cron) {
+        return new Response(
+            'Name the trigger to fire: /__scheduled?cron=<expression>',
+            { status: 400 },
+        );
+    }
+    try {
+        await run(cron, Date.now());
+        return new Response('Ran scheduled event');
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return new Response(`Scheduled event failed: ${message}`, {
+            status: 500,
+        });
     }
 }
 
@@ -186,6 +348,7 @@ async function handleShutdownSignal(evt: string, args: unknown): Promise<void> {
     }
     _isExiting = true;
     Logger.info(LogCategory.Base, 'NodeWorker caught:', evt, args);
+    await Promise.all([..._runners].map((runner) => runner.stop()));
     let result: number | void = 0;
     if (_delegate?.onStop) {
         result = await _delegate.onStop();

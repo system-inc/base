@@ -43,6 +43,14 @@ export interface EnvironmentVariables extends Dictionary<unknown> {
     readonly PORT?: string;
 
     /**
+     * `'true'` when the worker was started with `base develop
+     * --test-scheduled`: in local mode the Node runner then serves
+     * `/__scheduled?cron=<expr>` to fire a trigger by hand, as `wrangler
+     * dev --test-scheduled` does.
+     */
+    readonly TEST_SCHEDULED?: string;
+
+    /**
      * A list of databases to connect to.
      * Each database should have a name and a URL.
      * The URL should be formatted as a MySQL connection string.
