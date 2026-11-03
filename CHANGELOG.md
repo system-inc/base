@@ -80,8 +80,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   one, and none is stricter than the rule's check, apart from one documented
   exception: length minimums count UTF-16 code units. App-defined rules are
   left out of schemas until they declare a mapping.
-- **Node: `BaseWorkerNodeRunner.stop()`** stops accepting connections and
-  resolves once the server has closed.
+- **Node: scheduled executables run on their cron triggers.** The Node
+  runner fires `@ScheduledExecutable`s itself, through the same
+  `handleScheduled` path Cloudflare's cron service calls, on a `@scheduled`
+  container. Times are UTC.
+    - Triggers default to every cron expression a registered executable
+      uses. Set `scheduled.triggers` to fire `CRON_ANY_TRIGGER` executables
+      or a subset. `server[runConfig].scheduled: false` turns firing off,
+      for all but one instance of a scaled-out deployment.
+    - A trigger whose previous run is still in flight skips the fire, and a
+      stalled process fires once rather than catching up. Failures are
+      logged without stopping the schedule.
+    - `base develop --platform node --test-scheduled` serves
+      `/__scheduled?cron=…` in local mode, as `wrangler dev` does.
+- **Node: `BaseWorkerNodeRunner.stop()`** cancels the cron timers, stops
+  accepting connections, and waits for in-flight scheduled runs and
+  requests (up to `requestTimeout`). SIGINT and SIGTERM call it before the
+  delegate's `onStop`.
 
 ### Fixed
 

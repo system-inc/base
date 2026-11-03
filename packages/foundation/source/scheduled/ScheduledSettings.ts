@@ -12,4 +12,13 @@ export interface ScheduledSettings {
      * Default is 1 (no concurrency).
      */
     concurrency?: number;
+
+    /**
+     * The cron triggers the Node runner fires. On Cloudflare the triggers
+     * are `wrangler.toml`'s `[triggers] crons`, which Base never reads; on
+     * Node, the runner fires these itself. Defaults to every cron
+     * expression a registered executable is registered against — set it
+     * to fire `CRON_ANY_TRIGGER` executables, or to fire a subset.
+     */
+    triggers?: string[];
 }

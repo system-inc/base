@@ -72,6 +72,7 @@ async function runWorker() {
         baseWorkerProject.loadEnvironmentVariables(environmentType, {
             EXECUTION_MODE: executionMode,
             RUN_CONFIG: runConfigName,
+            TEST_SCHEDULED: process.env.TEST_SCHEDULED,
         } satisfies EnvironmentVariables);
 
     // create and start the NodeWorker
