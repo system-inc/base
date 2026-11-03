@@ -424,6 +424,16 @@ describe('RPC Test', () => {
         expect(didThrow).toBe(true);
     });
 
+    test('RPC method with @RpcArgument but no @Rpc is not callable', async () => {
+        await expect(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (rpcClient.call() as any).testUndeclared('x'),
+        ).rejects.toMatchObject({
+            code: RPC_ERROR_CODE_NOT_FOUND,
+            procedure: 'testUndeclared',
+        });
+    });
+
     test('RPC testValidation when validation fails', async () => {
         // arrange
         const validationTest = new ValidationRpcTest();
