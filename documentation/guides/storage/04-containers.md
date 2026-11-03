@@ -66,7 +66,7 @@ durable_objects = { bindings = [
 
 ## The inner worker
 
-`container/index.ts` and `container/settings.ts` are a completely normal Base worker (`BaseWorker.create(settings)`, `services`, RPC, the lot) with `server.port` matching `defaultPort`. Native dependencies go in `container/package.json` and are installed inside the image, where their bindings match the container's architecture.
+`container/index.ts` and `container/settings.ts` are a completely normal Base worker (`BaseWorker.create(settings)`, `services`, RPC, the lot) with `server.port` matching `defaultPort`, and `server.host` either unset or `'0.0.0.0'`. The Node runner binds to `host`, so `localhost` (the scaffold template's default) would leave the inner worker unreachable from outside the container. Native dependencies go in `container/package.json` and are installed inside the image, where their bindings match the container's architecture.
 
 The Dockerfile consumes the CLI's build output: `base container dist` bundles the worker script and a Node bootstrap into `container/dist/`, and the image's command is `node ./bootstrap.js <worker-name> ./workers ./<worker>.js`. The bootstrap refuses to start without `ENVIRONMENT` — pass it from the container class's `envVars`, as above (the outer worker always has it: the CLI sets it on every deploy and dev session). You rarely run that yourself — **`develop`, `deploy`, and `bundle` build the container automatically** whenever a `container/` folder exists.
 

@@ -1,7 +1,9 @@
 // Copyright 2026 System, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { once } from 'events';
 import { createServer, Server } from 'http';
+import { AddressInfo } from 'net';
 import { createServerAdapter } from '@whatwg-node/server';
 
 import { DefaultConfigurationKey } from '@system-inc/base-common/configuration/NamedConfiguration';
@@ -81,6 +83,14 @@ export class BaseWorkerNodeRunner {
             port = serverConfig.port;
         }
 
+        // bind to the configured host, or every interface when unset
+        const host = serverConfig?.host;
+        if (host !== undefined && host.includes('/')) {
+            throw new Error(
+                `BaseWorkerNodeRunner.start() - server['${runConfigName}'].host must be a hostname or IP address to bind to, got '${host}'.`,
+            );
+        }
+
         // we need to manually initialize base so the container and
         // all dependencies are available to the delegate
         const base = this.worker.getBase(environmentVariables);
@@ -115,16 +125,48 @@ export class BaseWorkerNodeRunner {
             this.httpServer,
             environmentVariables,
         );
-        this.httpServer.listen(port);
+        // wait until the server is bound, so a bind failure (port in use,
+        // address not on this machine) rejects start() instead of
+        // surfacing as an unhandled 'error' event
+        this.httpServer.listen(port, host);
+        await once(this.httpServer, 'listening');
         Logger.info(
             LogCategory.Base,
-            'Listening at http://127.0.0.1:%d ...',
-            port,
+            'Listening at %s ...',
+            formatListenAddress(this.httpServer.address() as AddressInfo),
         );
         Logger.info(LogCategory.Base, 'Request timeout: %dms', requestTimeout);
 
         await _delegate?.onStart?.();
     }
+
+    /**
+     * Stops accepting connections and closes the Node.js server, resolving
+     * once it has closed. Safe to call when the runner never started.
+     */
+    async stop(): Promise<void> {
+        const httpServer = this.httpServer;
+        if (!httpServer?.listening) {
+            return;
+        }
+        this.httpServer = undefined;
+        const closed = once(httpServer, 'close');
+        httpServer.close();
+        httpServer.closeIdleConnections();
+        await closed;
+    }
+}
+
+/**
+ * Formats a bound server address as a URL, marking a wildcard bind as
+ * listening on every interface.
+ */
+function formatListenAddress(address: AddressInfo): string {
+    const host =
+        address.family === 'IPv6' ? `[${address.address}]` : address.address;
+    const isWildcard =
+        address.address === '::' || address.address === '0.0.0.0';
+    return `http://${host}:${address.port}${isWildcard ? ' (all interfaces)' : ''}`;
 }
 
 /**
