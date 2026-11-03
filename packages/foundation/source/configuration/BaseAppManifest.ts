@@ -17,6 +17,7 @@ import { BaseEventListener } from '../event/BaseEventListener';
 import { EventBusListenerDecoratorName } from '../event/decorators/EventBusListener';
 import { GqlResolverDecoratorName } from '../graphql/decorators/GqlResolver';
 import { getAccessControlMetadata } from '../internal/access-control/AccessControlMetadata';
+import { rpcMetadataIndexProcedures } from '../internal/rpc/RpcMetadata';
 import {
     BaseMiddlewareRegistration,
     HandlerMiddlewareRegistration,
@@ -333,6 +334,11 @@ export class BaseAppManifest {
                 );
             }
         }
+
+        // RPC calls name only the procedure, so two registered RPC services
+        // declaring the same procedure name would make calls ambiguous.
+        // Indexing throws on a collision, naming both classes.
+        rpcMetadataIndexProcedures(this.rpc.services);
 
         // Declared module membership (@Injectable(SomeModuleKey), …) must
         // agree with the module graph, and token-less ORM injections must be

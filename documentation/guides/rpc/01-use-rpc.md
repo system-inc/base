@@ -102,3 +102,5 @@ The service class goes in the same `services` list as everything else. Exposure 
 - Visibility can be overridden per service (`@RpcService({ visibility: ... })`) or per procedure (`@Rpc({ visibility: ... })`) — most specific wins. Handy for one public procedure on an otherwise internal service.
 - In local development, visibility is always effectively public so you can iterate freely.
 - Like every service class, a decorated-but-unlisted service is not callable — registration is explicit.
+- Only methods marked `@Rpc()` (or `@WebSocketRpc()`) are procedures. A method with `@RpcArgument` parameters but no `@Rpc()` is not callable.
+- A call names only the procedure, not the service, so procedure names must be unique across the worker's registered RPC services. Two registered services declaring the same name fail at boot, naming both classes.

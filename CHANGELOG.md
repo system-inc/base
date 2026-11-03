@@ -7,7 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **RPC: a method without `@Rpc()` is no longer callable.** Registering an
+  argument with `@RpcArgument` also declared the method a procedure, so a
+  method on an `@RpcService` class that took `@RpcArgument` parameters but
+  was never marked `@Rpc()` could be called over RPC, with the service's
+  visibility. Only `@Rpc()` and `@WebSocketRpc()` declare procedures now.
+
+    **Migration:** a method that was being called without `@Rpc()` now
+    answers `NOT_FOUND`. Mark it `@Rpc()` if it is meant to be a procedure.
+
 ### Changed
+
+- **RPC: procedure names must be unique across registered RPC services.**
+  A call names only the procedure, and two registered services declaring
+  the same name were resolved by import order, without any warning. Boot
+  now fails with an error naming both classes.
+
+    **Migration:** rename one of the colliding procedures. Services that are
+    imported but not registered don't count.
 
 - **Node: `BaseWorkerNodeRunner` binds to `server.host`.** The runner
   ignored `host` and always listened on every interface, so a Node service
@@ -32,6 +51,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **RPC: an unregistered service can't shadow a registered procedure.**
+  Procedures were looked up by name across every decorated service, first
+  import first. A service that was imported but not listed in `services`
+  could claim a registered service's procedure name, and calls to it then
+  answered `NOT_FOUND`. Lookup now covers only the registered services.
 - **Node: `BaseWorkerNodeRunner.start()` rejects when the server can't
   bind.** A port already in use (`EADDRINUSE`) or an address the machine
   doesn't have surfaced as an unhandled `'error'` event while `start()`
