@@ -291,6 +291,16 @@ export class RpcTestService implements RpcTestServiceInterface {
         console.log('test void called!!!!!');
     }
 
+    /**
+     * Has an argument decorator but no `@Rpc()`, so it was never declared a
+     * procedure and must not be callable.
+     */
+    async testUndeclared(
+        @RpcArgument(() => String) value: string,
+    ): Promise<string> {
+        return `undeclared ${value}`;
+    }
+
     @Rpc()
     async testThrow(arg1: string, arg2: string): Promise<void> {
         console.log('request', arg1, arg2);

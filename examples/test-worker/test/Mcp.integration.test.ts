@@ -70,6 +70,45 @@ describe('MCP endpoint (official SDK client)', () => {
         expect(adminNames).toEqual(['tools_admin_secret', 'tools_shout']);
     });
 
+    test('describes each tool with a schema generated in the bundled worker', async () => {
+        const admin = await connected({ roles: ['Administrator'] });
+        const { tools } = await admin.listTools();
+
+        expect(tools).toEqual([
+            {
+                name: 'tools_admin_secret',
+                description:
+                    'Returns a labeled secret. Visible only to administrators.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        label: {
+                            type: 'string',
+                            maxLength: 20,
+                            description: 'The label to attach to the secret.',
+                        },
+                    },
+                    required: ['label'],
+                },
+            },
+            {
+                name: 'tools_shout',
+                description: 'Returns the text in upper case.',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        text: {
+                            type: 'string',
+                            description: 'The text to shout.',
+                        },
+                    },
+                    required: ['text'],
+                },
+                annotations: { readOnlyHint: true },
+            },
+        ]);
+    });
+
     test('calls a tool', async () => {
         const client = await connected();
         const result = await client.callTool({
@@ -111,5 +150,37 @@ describe('MCP endpoint (official SDK client)', () => {
                 arguments: { label: 'launch' },
             }),
         ).rejects.toThrow('Unknown tool: tools_admin_secret');
+    });
+});
+
+/**
+ * Raw HTTP, below the SDK: the origin check must hold through the worker's
+ * global middleware (its CORS settings allow every origin).
+ */
+describe('MCP endpoint origin check', () => {
+    async function ping(headers: Record<string, string>) {
+        return fetch(`${baseUrl}/mcp`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', ...headers },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' }),
+        });
+    }
+
+    test('refuses a browser origin that is not allowed', async () => {
+        const response = await ping({ origin: 'https://evil.example' });
+        expect(response.status).toBe(403);
+        expect(await response.json()).toMatchObject({
+            error: { message: 'Origin not allowed: https://evil.example' },
+        });
+    });
+
+    test('allows a request without an Origin header', async () => {
+        const response = await ping({});
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            jsonrpc: '2.0',
+            id: 1,
+            result: {},
+        });
     });
 });
