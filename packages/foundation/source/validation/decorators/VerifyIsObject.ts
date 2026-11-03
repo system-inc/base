@@ -17,5 +17,6 @@ export const VerifyIsObject = registerRule<void>({
     name: 'IsObject',
     check: (value) =>
         typeof value === 'object' && value !== null && !Array.isArray(value),
+    jsonSchema: () => ({ type: 'object' }),
     defaultMessage: ({ property }) => `${property} must be an object`,
 });

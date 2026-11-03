@@ -25,6 +25,16 @@ const rule = registerRule<IPVersion | undefined>({
         if (normalized === '6') return IPV6_PATTERN.test(value);
         return IPV4_PATTERN.test(value) || IPV6_PATTERN.test(value);
     },
+    jsonSchema: (version) => {
+        const normalized = version === undefined ? undefined : String(version);
+        const pattern =
+            normalized === '4'
+                ? IPV4_PATTERN.source
+                : normalized === '6'
+                  ? IPV6_PATTERN.source
+                  : `${IPV4_PATTERN.source}|${IPV6_PATTERN.source}`;
+        return { type: 'string', pattern };
+    },
     defaultMessage: ({ property, options }) =>
         options
             ? `${property} must be a valid IPv${options} address`

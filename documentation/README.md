@@ -114,6 +114,8 @@ The API **reference** is not authored here — it is generated from TSDoc by
    opt-in wire shapes, field options, 400 vs 422, `StrictJsonInterface`.
 2. [Transformers](./guides/serialization/02-transformers.md): built-in and custom
    value transformers.
+3. [JSON Schema](./guides/serialization/03-json-schema.md): generate a 2020-12
+   schema from serialization and validation metadata.
 
 ### Guides · Testing
 

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { registerRule } from '../RegisterRule';
+import { lengthJsonSchema } from './internal/LengthJsonSchema';
 
 const rule = registerRule<{ min: number; max?: number }>({
     name: 'Length',
@@ -11,6 +12,7 @@ const rule = registerRule<{ min: number; max?: number }>({
         if (max !== undefined && value.length > max) return false;
         return true;
     },
+    jsonSchema: ({ min, max }, target) => lengthJsonSchema(target, min, max),
     defaultMessage: ({ property, options }) =>
         options.max !== undefined
             ? `${property} must be between ${options.min} and ${options.max} characters long`

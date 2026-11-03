@@ -43,6 +43,9 @@ function allowedValues(allowed: EnumLike): unknown[] {
 const rule = registerRule<EnumLike>({
     name: 'IsEnum',
     check: (value, allowed) => allowedValues(allowed).includes(value),
+    jsonSchema: (allowed) => ({
+        enum: allowedValues(allowed) as (string | number)[],
+    }),
     defaultMessage: ({ property, options }) =>
         `${property} must be one of ${allowedValues(options).join(', ')}`,
 });

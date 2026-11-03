@@ -17,6 +17,7 @@ export const VerifyArrayMaxSize = registerRule<number>({
     name: 'ArrayMaxSize',
     operatesOn: 'array',
     check: (value, max) => Array.isArray(value) && value.length <= max,
+    jsonSchema: (max) => ({ type: 'array', maxItems: max }),
     defaultMessage: ({ property, options }) =>
         `${property} must contain no more than ${options} elements`,
 });

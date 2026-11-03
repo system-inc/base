@@ -25,6 +25,7 @@ export const VerifyIsTimeZone = registerRule<void>({
             return false;
         }
     },
+    jsonSchema: () => ({ type: 'string' }),
     defaultMessage: ({ property }) =>
         `${property} must be a valid IANA time zone`,
 });

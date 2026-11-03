@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { registerRule } from '../RegisterRule';
+import { lengthJsonSchema } from './internal/LengthJsonSchema';
 
 /**
  * Validates that a string or array property is at most the given
@@ -18,6 +19,7 @@ export const VerifyMaxLength = registerRule<number>({
     check: (value, max) =>
         (typeof value === 'string' || Array.isArray(value)) &&
         value.length <= max,
+    jsonSchema: (max, target) => lengthJsonSchema(target, undefined, max),
     defaultMessage: ({ property, options }) =>
         `${property} must be at most ${options} characters long`,
 });

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
+import { RuleJsonSchemaMapping } from '../../validation/RuleJsonSchema';
+
 /**
  * Internal metadata storage for validation rules.
  *
@@ -64,6 +66,10 @@ export interface RuleMetadata {
         context: ValidationContext,
     ) => RuleCheckResult;
     readonly message: (context: ValidationContext) => string;
+    /**
+     * The rule's JSON Schema mapping, when it declares one.
+     */
+    readonly jsonSchema?: RuleJsonSchemaMapping<unknown>;
 }
 
 /**

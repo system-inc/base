@@ -15,5 +15,6 @@ import { registerRule } from '../RegisterRule';
 export const VerifyIsInt = registerRule<void>({
     name: 'IsInt',
     check: (value) => Number.isInteger(value),
+    jsonSchema: () => ({ type: 'integer' }),
     defaultMessage: ({ property }) => `${property} must be an integer`,
 });

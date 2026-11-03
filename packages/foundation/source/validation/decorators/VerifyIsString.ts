@@ -15,5 +15,6 @@ import { registerRule } from '../RegisterRule';
 export const VerifyIsString = registerRule<void>({
     name: 'IsString',
     check: (value) => typeof value === 'string',
+    jsonSchema: () => ({ type: 'string' }),
     defaultMessage: ({ property }) => `${property} must be a string`,
 });

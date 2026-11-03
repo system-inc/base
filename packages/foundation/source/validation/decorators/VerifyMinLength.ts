@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { registerRule } from '../RegisterRule';
+import { lengthJsonSchema } from './internal/LengthJsonSchema';
 
 /**
  * Validates that a string or array property is at least the given
@@ -18,6 +19,7 @@ export const VerifyMinLength = registerRule<number>({
     check: (value, min) =>
         (typeof value === 'string' || Array.isArray(value)) &&
         value.length >= min,
+    jsonSchema: (min, target) => lengthJsonSchema(target, min, undefined),
     defaultMessage: ({ property, options }) =>
         `${property} must be at least ${options} characters long`,
 });

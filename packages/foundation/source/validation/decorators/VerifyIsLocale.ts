@@ -31,6 +31,7 @@ export const VerifyIsLocale = registerRule<void>({
             return false;
         }
     },
+    jsonSchema: () => ({ type: 'string', minLength: 1 }),
     defaultMessage: ({ property }) =>
         `${property} must be a valid BCP 47 locale tag`,
 });

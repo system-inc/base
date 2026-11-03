@@ -15,6 +15,7 @@ import { registerRule } from '../RegisterRule';
 export const VerifyMin = registerRule<number>({
     name: 'Min',
     check: (value, min) => typeof value === 'number' && value >= min,
+    jsonSchema: (min) => ({ type: 'number', minimum: min }),
     defaultMessage: ({ property, options }) =>
         `${property} must not be less than ${options}`,
 });

@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { registerRule } from '../RegisterRule';
+import { RuleJsonSchemaUnrepresentable } from '../RuleJsonSchema';
 
 const rule = registerRule<Date>({
     name: 'MinDate',
     check: (value, minimum) =>
         value instanceof Date && value.getTime() >= minimum.getTime(),
+    jsonSchema: RuleJsonSchemaUnrepresentable,
     defaultMessage: ({ property, options }) =>
         `minimal allowed date for ${property} is ${options.toISOString()}`,
 });

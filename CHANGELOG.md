@@ -46,6 +46,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Serialization: JSON Schema generation.** `generateJsonSchema(type)`
+  (`serialization/GenerateJsonSchema`) returns a draft 2020-12 schema for
+  any type `deserialize` accepts. Structure (wire names, types, `required`,
+  `default`, `description`, nested classes in `$defs`) comes from
+  `@SerializableField`, and constraints come from `@Verify*` rules.
+  `JsonSchemaBuilder` composes several types over one shared `$defs`.
+- **Validation: rules declare a JSON Schema mapping.** `RuleDefinition`
+  gains an optional `jsonSchema`: a function returning the keywords the rule
+  adds, or `RuleJsonSchemaUnrepresentable`. Every built-in rule declares
+  one, and none is stricter than the rule's check, apart from one documented
+  exception: length minimums count UTF-16 code units. App-defined rules are
+  left out of schemas until they declare a mapping.
 - **Node: `BaseWorkerNodeRunner.stop()`** stops accepting connections and
   resolves once the server has closed.
 

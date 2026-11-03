@@ -15,5 +15,9 @@ import { registerRule } from '../RegisterRule';
 export const VerifyIsDefined = registerRule<void>({
     name: 'IsDefined',
     check: (value) => value !== null && value !== undefined,
+    // Whether the field may be omitted is the @SerializableField's
+    // call (required unless optional or defaulted), and null is never
+    // advertised, so this adds no keyword.
+    jsonSchema: () => ({}),
     defaultMessage: ({ property }) => `${property} must be defined`,
 });

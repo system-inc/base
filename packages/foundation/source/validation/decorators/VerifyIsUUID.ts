@@ -49,12 +49,27 @@ const UUID_PATTERNS: Record<string, RegExp> = {
     all: UUID_ANY_PATTERN,
 };
 
+/**
+ * The version's pattern without the `i` flag, which JSON Schema patterns
+ * can't carry: each hex digit class is spelled out in both cases, so it
+ * matches exactly what the flagged pattern does.
+ */
+function uuidJsonSchemaPattern(version: UUIDVersion): string | undefined {
+    return UUID_PATTERNS[String(version)]?.source
+        .replace(/\[0-9a-f\]/g, '[0-9a-fA-F]')
+        .replace(/\[89ab\]/g, '[89abAB]');
+}
+
 const rule = registerRule<UUIDVersion>({
     name: 'IsUUID',
     check: (value, version) => {
         if (typeof value !== 'string') return false;
         const pattern = UUID_PATTERNS[String(version)];
         return pattern ? pattern.test(value) : false;
+    },
+    jsonSchema: (version) => {
+        const pattern = uuidJsonSchemaPattern(version);
+        return pattern ? { type: 'string', pattern } : { type: 'string' };
     },
     defaultMessage: ({ property, options }) =>
         options === 'all'

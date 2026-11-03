@@ -47,5 +47,13 @@ export const VerifyIsNotEmpty = registerRule<void>({
     // never be rejected despite [] being empty by this rule's own definition.
     operatesOn: 'array',
     check: (value) => !isEmptyValue(value),
+    // A deserialized class instance is never empty, and a plain
+    // object's emptiness isn't a keyword this generator emits.
+    jsonSchema: (_options, target) => {
+        if (target.type === 'string') return { minLength: 1 };
+        if (target.type === 'array') return { minItems: 1 };
+        if (target.type === 'object' || target.$ref) return {};
+        return { minLength: 1, minItems: 1 };
+    },
     defaultMessage: ({ property }) => `${property} should not be empty`,
 });

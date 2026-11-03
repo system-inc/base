@@ -15,5 +15,6 @@ import { registerRule } from '../RegisterRule';
 export const VerifyIsNumber = registerRule<void>({
     name: 'IsNumber',
     check: (value) => typeof value === 'number' && Number.isFinite(value),
+    jsonSchema: () => ({ type: 'number' }),
     defaultMessage: ({ property }) => `${property} must be a number`,
 });

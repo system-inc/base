@@ -55,6 +55,7 @@ registerRule<TOptions>({
     operatesOn?,    // 'value' (default) or 'array'
     check,          // (value, options, context) => true | false | string
     defaultMessage, // string, or ({ property, options }) => string
+    jsonSchema?,    // (options, target) => keywords, or 'unrepresentable'
 });
 ```
 
@@ -65,3 +66,18 @@ Three behaviors worth knowing:
 - Your rule automatically gets the **`.check()` predicate** for free, like every built-in.
 
 `VerifyBy` (from `validation/decorators/VerifyBy`) is the same function under an alias, if you prefer the naming symmetry with the other decorators.
+
+## JSON Schema
+
+A [generated JSON Schema](../serialization/03-json-schema.md) leaves out a custom rule unless the rule declares how it maps. `jsonSchema` receives the rule's options and the schema of the value it applies to: the field itself, or its `items` for a value-level rule on an array. It returns the keywords to add:
+
+```ts
+export const VerifyIsSlug = registerRule<void>({
+    name: 'IsSlug',
+    check: (value) => typeof value === 'string' && /^[a-z0-9-]+$/.test(value),
+    jsonSchema: () => ({ type: 'string', pattern: '^[a-z0-9-]+$' }),
+    defaultMessage: '$property must be a slug',
+});
+```
+
+A mapping must never be stricter than `check`: every value `check` accepts must pass the keywords. Leave out what you can't express exactly, or return `RuleJsonSchemaUnrepresentable` (from `validation/RuleJsonSchema`).

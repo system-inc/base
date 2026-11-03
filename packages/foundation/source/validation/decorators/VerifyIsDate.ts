@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { registerRule } from '../RegisterRule';
+import { RuleJsonSchemaUnrepresentable } from '../RuleJsonSchema';
 
 /**
  * Validates that the property is a valid `Date` instance.
@@ -15,5 +16,8 @@ import { registerRule } from '../RegisterRule';
 export const VerifyIsDate = registerRule<void>({
     name: 'IsDate',
     check: (value) => value instanceof Date && !Number.isNaN(value.getTime()),
+    // A date crosses the wire as a string; whether it parses to a
+    // valid Date has no schema keyword.
+    jsonSchema: RuleJsonSchemaUnrepresentable,
     defaultMessage: ({ property }) => `${property} must be a Date`,
 });
