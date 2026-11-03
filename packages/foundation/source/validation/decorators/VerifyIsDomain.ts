@@ -24,5 +24,8 @@ const DOMAIN_PATTERN =
 export const VerifyIsDomain = registerRule<void>({
     name: 'IsDomain',
     check: (value) => typeof value === 'string' && DOMAIN_PATTERN.test(value),
+    // The lookahead's `.` counts code points under the `u` flag, but the
+    // rest of the pattern matches only ASCII, so the count is the same.
+    jsonSchema: () => ({ type: 'string', pattern: DOMAIN_PATTERN.source }),
     defaultMessage: ({ property }) => `${property} must be a valid domain name`,
 });

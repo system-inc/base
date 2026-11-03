@@ -15,5 +15,6 @@ import { registerRule } from '../RegisterRule';
 export const VerifyIsBoolean = registerRule<void>({
     name: 'IsBoolean',
     check: (value) => typeof value === 'boolean',
+    jsonSchema: () => ({ type: 'boolean' }),
     defaultMessage: ({ property }) => `${property} must be a boolean`,
 });

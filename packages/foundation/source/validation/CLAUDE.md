@@ -44,6 +44,7 @@ Every `@Verify*` decorator is produced by `registerRule(definition)`. A `RuleDef
 - `operatesOn?: 'value' | 'array'` — value-level (default; applies per-element when the property also has an array-level rule) vs array-level.
 - `check(value, options, context) => RuleCheckResult` — return `true` to pass, `false` for the default message, or a `string` for a custom message.
 - `defaultMessage` — string (with `$property` interpolation) or a function of the `ValidationContext`.
+- `jsonSchema?` — how the rule appears in a generated JSON Schema (`RuleJsonSchema.ts`): `(options, target) => keywords`, where `target` is the schema of the value the rule applies to (so length rules pick `minLength` vs `minItems`), or `RuleJsonSchemaUnrepresentable`. Omitted = unrepresentable (app rules opt in). A mapping is **never stricter than `check`** — every value `check` accepts passes the keywords — so inexpressible parts are dropped: no `format`, no `pattern` for a flagged regex or one that differs under the `u` flag, `uniqueItems` only for primitive items (the check compares by identity). The one exception is documented in `decorators/internal/LengthJsonSchema.ts`: length minimums count UTF-16 code units, JSON Schema counts code points. `RuleJsonSchema.test.ts` requires every built-in rule to declare a mapping and checks each against a real 2020-12 validator.
 
 `registerRule` returns a decorator factory and also exposes a `.check(value)` predicate for ad-hoc use (in services or tests) outside a decorator context; only a literal `true` counts as a pass.
 

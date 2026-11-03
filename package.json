@@ -46,6 +46,7 @@
         "@types/ws": "^8.5.12",
         "@typescript-eslint/utils": "^8.18.0",
         "@whatwg-node/server": "^0.9.19",
+        "ajv": "^8.20.0",
         "better-sqlite3": "^9.6.0",
         "drizzle-kit": "^0.31.10",
         "drizzle-orm": "^0.45.2",

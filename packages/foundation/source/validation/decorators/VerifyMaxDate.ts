@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { registerRule } from '../RegisterRule';
+import { RuleJsonSchemaUnrepresentable } from '../RuleJsonSchema';
 
 const rule = registerRule<Date>({
     name: 'MaxDate',
     check: (value, maximum) =>
         value instanceof Date && value.getTime() <= maximum.getTime(),
+    jsonSchema: RuleJsonSchemaUnrepresentable,
     defaultMessage: ({ property, options }) =>
         `maximal allowed date for ${property} is ${options.toISOString()}`,
 });

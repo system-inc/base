@@ -23,5 +23,8 @@ export const VerifyIsUrl = registerRule<void>({
             return false;
         }
     },
+    // URL parsing has no schema keyword; `format: uri` isn't emitted
+    // because a validator that asserts formats can be stricter.
+    jsonSchema: () => ({ type: 'string' }),
     defaultMessage: ({ property }) => `${property} must be a valid URL`,
 });

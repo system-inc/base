@@ -24,5 +24,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const VerifyIsEmail = registerRule<void>({
     name: 'IsEmail',
     check: (value) => typeof value === 'string' && EMAIL_PATTERN.test(value),
+    jsonSchema: () => ({ type: 'string', pattern: EMAIL_PATTERN.source }),
     defaultMessage: ({ property }) => `${property} must be a valid email`,
 });

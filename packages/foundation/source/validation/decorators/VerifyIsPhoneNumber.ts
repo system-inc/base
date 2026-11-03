@@ -92,6 +92,7 @@ export function verifyIsPhoneNumber(
 const rule = registerRule<IsPhoneNumberOptions | undefined>({
     name: 'IsPhoneNumber',
     check: (value, options) => verifyIsPhoneNumber(value, options),
+    jsonSchema: () => ({ type: 'string' }),
     defaultMessage: ({ property, options }) => {
         const regions: PhoneRegion[] = Array.isArray(options?.region)
             ? options.region

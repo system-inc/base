@@ -10,19 +10,28 @@ import {
 
 export type CountryCodeFormat = 'alpha2' | 'alpha3' | 'numeric';
 
+/**
+ * The ISO 3166-1 code set for a format.
+ */
+function countryCodes(format: CountryCodeFormat): ReadonlySet<string> {
+    switch (format) {
+        case 'alpha2':
+            return ISO_3166_1_ALPHA2;
+        case 'alpha3':
+            return ISO_3166_1_ALPHA3;
+        case 'numeric':
+            return ISO_3166_1_NUMERIC;
+    }
+}
+
 const rule = registerRule<CountryCodeFormat>({
     name: 'IsCountryCode',
-    check: (value, format) => {
-        if (typeof value !== 'string') return false;
-        switch (format) {
-            case 'alpha2':
-                return ISO_3166_1_ALPHA2.has(value);
-            case 'alpha3':
-                return ISO_3166_1_ALPHA3.has(value);
-            case 'numeric':
-                return ISO_3166_1_NUMERIC.has(value);
-        }
-    },
+    check: (value, format) =>
+        typeof value === 'string' && countryCodes(format).has(value),
+    jsonSchema: (format) => ({
+        type: 'string',
+        enum: [...countryCodes(format)].sort(),
+    }),
     defaultMessage: ({ property, options }) =>
         `${property} must be a valid ISO 3166-1 ${options} country code`,
 });

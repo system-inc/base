@@ -6,6 +6,7 @@ import {
     RuleCheckResult,
     ValidationContext,
 } from '../internal/metadata/ValidationMetadata';
+import { RuleJsonSchemaMapping } from './RuleJsonSchema';
 
 /**
  * Definition a rule author provides to {@link registerRule}.
@@ -52,6 +53,13 @@ export interface RuleDefinition<TOptions> {
     readonly defaultMessage:
         | string
         | ((context: ValidationContext<TOptions>) => string);
+
+    /**
+     * How the rule appears in a generated JSON Schema (see
+     * {@link RuleJsonSchemaMapping}). Omitted means unrepresentable, which
+     * is how app-defined rules behave unless they declare a mapping.
+     */
+    readonly jsonSchema?: RuleJsonSchemaMapping<TOptions>;
 }
 
 /**
@@ -140,6 +148,9 @@ export function registerRule<TOptions = void>(
                     options: unknown,
                     context: ValidationContext,
                 ) => RuleCheckResult,
+                jsonSchema: definition.jsonSchema as
+                    | RuleJsonSchemaMapping<unknown>
+                    | undefined,
                 message: (context) => {
                     if (typeof defaultMessage === 'function') {
                         return defaultMessage(

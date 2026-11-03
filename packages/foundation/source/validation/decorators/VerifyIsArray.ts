@@ -16,5 +16,6 @@ export const VerifyIsArray = registerRule<void>({
     name: 'IsArray',
     operatesOn: 'array',
     check: (value) => Array.isArray(value),
+    jsonSchema: () => ({ type: 'array' }),
     defaultMessage: ({ property }) => `${property} must be an array`,
 });

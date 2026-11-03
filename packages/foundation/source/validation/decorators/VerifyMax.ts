@@ -16,6 +16,7 @@ import { registerRule } from '../RegisterRule';
 export const VerifyMax = registerRule<number>({
     name: 'Max',
     check: (value, max) => typeof value === 'number' && value <= max,
+    jsonSchema: (max) => ({ type: 'number', maximum: max }),
     defaultMessage: ({ property, options }) =>
         `${property} must not be greater than ${options}`,
 });

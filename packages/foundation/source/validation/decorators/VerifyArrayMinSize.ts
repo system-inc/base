@@ -17,6 +17,7 @@ export const VerifyArrayMinSize = registerRule<number>({
     name: 'ArrayMinSize',
     operatesOn: 'array',
     check: (value, min) => Array.isArray(value) && value.length >= min,
+    jsonSchema: (min) => ({ type: 'array', minItems: min }),
     defaultMessage: ({ property, options }) =>
         `${property} must contain at least ${options} elements`,
 });

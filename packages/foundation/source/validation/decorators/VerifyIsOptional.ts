@@ -20,5 +20,8 @@ import { registerRule } from '../RegisterRule';
 export const VerifyIsOptional = registerRule<void>({
     name: 'IsOptional',
     check: () => true,
+    // Skips the property's other rules for null/undefined. Whether the
+    // field may be omitted is the @SerializableField's call.
+    jsonSchema: () => ({}),
     defaultMessage: '',
 });
