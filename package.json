@@ -36,6 +36,7 @@
         "@cloudflare/workers-types": "^4.20260604.1",
         "@eslint/js": "^9.16.0",
         "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+        "@modelcontextprotocol/sdk": "^1.32.2",
         "@planetscale/database": "^1.18.0",
         "@system-inc/base-lint": "*",
         "@system-inc/nexus": "^1.0.0",

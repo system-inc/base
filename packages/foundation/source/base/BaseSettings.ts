@@ -8,6 +8,7 @@ import type { CfDurableObjectSettings } from '../cloudflare/durable-object/CfDur
 import type { GqlSettings } from '../graphql/GqlSettings';
 import type { KeyValueStorageSettings } from '../key-value-storage/KeyValueStorageSettings';
 import type { LoggingSettings } from '../logging/LoggingSettings';
+import type { McpSettings } from '../mcp/McpSettings';
 import {
     BaseMiddlewareRegistration,
     HandlerMiddlewareRegistration,
@@ -115,6 +116,12 @@ export interface BaseSettings {
      * The RPC settings for the Base Worker.
      */
     readonly rpc?: RpcSettings;
+
+    /**
+     * Serves the worker's MCP tools — `@Rpc({ mcp: { ... } })` procedures —
+     * over MCP's Streamable HTTP transport. Setting it enables the endpoint.
+     */
+    readonly mcp?: McpSettings;
 
     /**
      * Middleware settings for this module.

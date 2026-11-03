@@ -29,6 +29,8 @@ import { CloudflarePlatformDelegate } from '../internal/cloudflare/CloudflarePla
 import { createWorkerChildContainer } from '../internal/dependency-injection/InjectionContainers';
 import { BaseExecutionContext } from '../internal/execution-context/BaseExecutionContext';
 import { GqlDispatcher } from '../internal/graphql/GqlDispatcher';
+import { McpDispatcher } from '../internal/mcp/McpDispatcher';
+import { McpToolRegistry } from '../internal/mcp/McpToolRegistry';
 import { NodePlatformDelegate } from '../internal/node/NodePlatformDelegate';
 import { WorkerQueueConsumer } from '../internal/queue/consumer/WorkerQueueConsumer';
 import { WorkerQueueService } from '../internal/queue/producer/WorkerQueueService';
@@ -240,6 +242,7 @@ export class Base {
         this.initializeGql();
         this.initializeWebSocketRoutes(); // sockets must be initialized before rpc
         this.initializeRpcRoute();
+        this.initializeMcpRoute();
 
         // initialize all the modules, this gives all modules a chance to do some work before we start
         await this.initializeModules();
@@ -654,29 +657,67 @@ export class Base {
             return;
         }
 
-        const rpcServiceSettings = this.configuration.rpcServer;
-
         // get the settings and determine the endpoint
         const rpcRoute =
             this.configuration.rpcServer.route ?? DefaultRpcEndpoint;
-
-        const getRpcHandler = () => {
-            if (!this._rpcDispatcher) {
-                this._rpcDispatcher = new RpcDispatcher(
-                    this.configuration.runtime,
-                    rpcServiceSettings,
-                );
-            }
-            return this._rpcDispatcher;
-        };
 
         // most of the RPCs should only handle POST requests. But we will support GET for RPCs that supports building WebSocket.
         this.router.createRoute(
             ['POST'],
             rpcRoute,
             async (request: BaseRequest) => {
-                return await getRpcHandler().handleRequest(request);
+                return await this.getRpcDispatcher().handleRequest(request);
             },
+        );
+    }
+
+    /**
+     * The lazily created RPC dispatcher, shared by the RPC route and the
+     * MCP endpoint so both run procedures through one path.
+     */
+    private getRpcDispatcher(): RpcDispatcher {
+        if (!this._rpcDispatcher) {
+            const rpcServer = this.configuration.rpcServer;
+            if (!rpcServer) {
+                throw new Error('No RPC services are registered.');
+            }
+            this._rpcDispatcher = new RpcDispatcher(
+                this.configuration.runtime,
+                rpcServer,
+            );
+        }
+        return this._rpcDispatcher;
+    }
+
+    private initializeMcpRoute() {
+        const mcp = this.configuration.mcp;
+        if (!mcp) {
+            return;
+        }
+
+        // built now, not on first request, so a misdeclared tool fails boot
+        const tools = new McpToolRegistry(this.configuration.rpcServer);
+        const dispatcher = new McpDispatcher(
+            mcp,
+            {
+                name: this.configuration.name,
+                title: this.configuration.title,
+                version: this.configuration.version,
+            },
+            tools,
+            () => this.getRpcDispatcher(),
+        );
+        Logger.info(
+            LogCategory.Mcp,
+            'Serving %d MCP tool(s) on route: %s',
+            tools.all().length,
+            mcp.route,
+        );
+
+        this.router.createRoute(
+            ['POST', 'GET', 'DELETE'],
+            mcp.route,
+            async (request: BaseRequest) => dispatcher.handleRequest(request),
         );
     }
 

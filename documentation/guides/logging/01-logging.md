@@ -65,7 +65,7 @@ The env directive wins over settings for whatever it mentions; settings it doesn
 
 A typo in `LOG_LEVEL` fails the worker's boot with the list of valid levels; it does not silently change what production logs.
 
-The framework's own categories: `base` (boot, dispatch), `http`, `rpc`, `gql`, `orm`, `queue`, `scheduled`, `ws`, `event`, `kv`, `durable`.
+The framework's own categories: `base` (boot, dispatch), `http`, `rpc`, `mcp`, `gql`, `orm`, `queue`, `scheduled`, `ws`, `event`, `kv`, `durable`.
 
 ## The request log
 

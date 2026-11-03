@@ -6,6 +6,7 @@ import { SessionAccessOptions } from '../../access-control/SessionAccessOptions'
 import { SessionContext } from '../../access-control/SessionContext';
 import { SessionContextProvider } from '../../access-control/SessionContextProvider';
 import { SessionContextRequestKey } from '../../access-control/SessionContextRequestKey';
+import { BaseError } from '../../error/BaseError';
 import {
     ERROR_CODE_AUTHENTICATION_REQUIRED,
     ERROR_CODE_INSUFFICIENT_ENTITLEMENTS,
@@ -44,12 +45,32 @@ export async function runSessionAccessMiddleware(
     // callers with a single handler per request may omit it.
     handler: BaseHandler = requestContext.handler,
 ): Promise<void> {
+    const denial = await sessionAccessDenial(requestContext, handler);
+    if (denial) {
+        throw denial;
+    }
+}
+
+/**
+ * Decides whether the request may reach the handler, with the same
+ * resolution and checks {@link runSessionAccessMiddleware} enforces, but
+ * returns the denial instead of throwing it: `undefined` when access is
+ * allowed, else the 401/403 error the middleware would throw. For a surface
+ * that must decide access without dispatching (filtering an MCP tool list).
+ *
+ * Errors the provider throws (policy failures, rejected credentials)
+ * propagate unchanged — they aren't denials of this handler.
+ */
+export async function sessionAccessDenial(
+    requestContext: HandlerRequestContext,
+    handler: BaseHandler,
+): Promise<BaseError | undefined> {
     // read the handler's effective options from metadata — absent means
     // the handler carries no access-control decorators
     const options =
         getAccessControlMetadata().getSessionAccessOptionsForHandler(handler);
     if (!options) {
-        return;
+        return undefined;
     }
 
     // resolve the session for the request through the registered provider
@@ -61,34 +82,34 @@ export async function runSessionAccessMiddleware(
 
     // if we're skipping authorization, we're done after loading the session
     if (options.skipAuthorization) {
-        return;
+        return undefined;
     }
 
     if (!sessionContext) {
-        throw HttpErrors.unauthorized({
+        return HttpErrors.unauthorized({
             message: 'User is not authenticated.',
             errorCode: ERROR_CODE_AUTHENTICATION_REQUIRED,
         });
     }
 
-    verifySessionAccess(sessionContext, options);
+    return sessionAccessViolation(sessionContext, options);
 }
 
 /**
- * Verifies the session against the handler's access requirements.
- * Matching is any-of for both roles and entitlements; an absent or empty
- * requirement list passes.
+ * Checks the session against the handler's access requirements, returning
+ * the 403 for the first unmet one. Matching is any-of for both roles and
+ * entitlements; an absent or empty requirement list passes.
  */
-function verifySessionAccess(
+function sessionAccessViolation(
     sessionContext: SessionContext,
     options: SessionAccessOptions,
-): void {
+): BaseError | undefined {
     if (
         options.roles &&
         options.roles.length > 0 &&
         !matchesAny(sessionContext.accessRoles, options.roles)
     ) {
-        throw HttpErrors.forbidden({
+        return HttpErrors.forbidden({
             message: 'Required access roles not present.',
             errorCode: ERROR_CODE_PERMISSION_DENIED,
         });
@@ -99,11 +120,13 @@ function verifySessionAccess(
         options.entitlements.length > 0 &&
         !matchesAny(sessionContext.entitlements, options.entitlements)
     ) {
-        throw HttpErrors.forbidden({
+        return HttpErrors.forbidden({
             message: 'Required entitlement not present.',
             errorCode: ERROR_CODE_INSUFFICIENT_ENTITLEMENTS,
         });
     }
+
+    return undefined;
 }
 
 function matchesAny(

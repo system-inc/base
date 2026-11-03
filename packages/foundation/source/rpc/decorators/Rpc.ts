@@ -4,6 +4,7 @@
 import { Constructor } from '@system-inc/base-common/type/Constructor';
 import { TypeFunc } from '@system-inc/base-common/type/TypeFunc';
 import { rpcMetadataAddHandler } from '../../internal/rpc/RpcMetadata';
+import { McpToolOptions } from '../../mcp/McpToolOptions';
 import { RpcVisibility } from '../RpcVisibility';
 
 export interface RpcOptions {
@@ -15,6 +16,13 @@ export interface RpcOptions {
      * In local development mode everything is effectively `'public'`.
      */
     visibility?: RpcVisibility;
+
+    /**
+     * Exposes the procedure as an MCP tool when the worker serves MCP
+     * (`BaseSettings.mcp`). The tool's description is required here. A
+     * tool's procedure must resolve to `'public'` visibility, or boot fails.
+     */
+    mcp?: McpToolOptions;
 }
 
 /**

@@ -75,6 +75,8 @@ The API **reference** is not authored here — it is generated from TSDoc by
    monorepo type sharing with the frontend.
 4. [Worker-to-Worker Calls](./guides/rpc/04-worker-to-worker.md): typed clients
    over Cloudflare service bindings, internal visibility.
+5. [Expose Procedures as MCP Tools](./guides/rpc/05-mcp-tools.md): serve
+   procedures to MCP clients like Claude Code, with per-caller tool lists.
 
 ### Guides · Dependency Injection
 
