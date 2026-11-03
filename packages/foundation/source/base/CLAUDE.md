@@ -4,16 +4,17 @@ The entry point and engine of a worker. `BaseWorker` is the object your worker m
 
 ## Files
 
-| File                                   | Role                                                                                                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base/Base.ts`                         | The engine. Lifecycle (`initialize`) + the event handlers (`handleRequest`, `handleMessages`, `handleScheduled`, `webSocket*`).                         |
-| `base/BaseSettings.ts`                 | The interface you implement to configure a worker (see the [package doc](../../CLAUDE.md) for the field list). `isBaseSettings()` is the runtime guard. |
-| `base/BaseServerSettings.ts`           | Local dev-server settings (`BaseSettings.server`).                                                                                                      |
-| `base/BaseMetadata.ts`                 | Process-global metadata registries (see below).                                                                                                         |
-| `worker/BaseWorker.ts`                 | The exported worker object: `fetch`/`queue`/`scheduled` handlers.                                                                                       |
-| `worker/BaseWorkerContext.ts`          | Bundles `BaseConfiguration` + the `@worker` DI container.                                                                                               |
-| `worker/BaseWorkerDelegate.ts`         | Optional app hooks: `onInitialize(base)`, `onStart`, `onStop`.                                                                                          |
-| `worker/BaseWorkerPlatformDelegate.ts` | The 3-method platform interface (see [package doc](../../CLAUDE.md#key-design-choices)).                                                                |
+| File                                   | Role                                                                                                                                                                             |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base/Base.ts`                         | The engine. Lifecycle (`initialize`) + the event handlers (`handleRequest`, `handleMessages`, `handleScheduled`, `webSocket*`).                                                  |
+| `base/BaseSettings.ts`                 | The interface you implement to configure a worker (see the [package doc](../../CLAUDE.md) for the field list). `isBaseSettings()` is the runtime guard.                          |
+| `base/BaseServerSettings.ts`           | Per-run-config server settings (`BaseSettings.server`): `port`, `host` (the bind address for `wrangler dev` and the Node runner), protocol, timeouts.                            |
+| `base/BaseMetadata.ts`                 | Process-global metadata registries (see below).                                                                                                                                  |
+| `worker/BaseWorker.ts`                 | The exported worker object: `fetch`/`queue`/`scheduled` handlers.                                                                                                                |
+| `worker/BaseWorkerContext.ts`          | Bundles `BaseConfiguration` + the `@worker` DI container.                                                                                                                        |
+| `worker/BaseWorkerDelegate.ts`         | Optional app hooks: `onInitialize(base)`, `onStart`, `onStop`.                                                                                                                   |
+| `worker/BaseWorkerPlatformDelegate.ts` | The 3-method platform interface (see [package doc](../../CLAUDE.md#key-design-choices)).                                                                                         |
+| `worker/node/BaseWorkerNodeRunner.ts`  | Serves a worker on Node: `start(env)` binds `server[RUN_CONFIG]`'s `port`/`host` (every interface when `host` is unset) and resolves once listening; `stop()` closes the server. |
 
 ## Bootstrap flow
 

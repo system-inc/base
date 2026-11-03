@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Node: `BaseWorkerNodeRunner` binds to `server.host`.** The runner
+  ignored `host` and always listened on every interface, so a Node service
+  couldn't be kept local-only. It now passes the run config's `host` to
+  `listen()`, the same way `base develop` passes it to `wrangler dev` as
+  `--ip`. With no `host`, it still listens on every interface. A `host`
+  that isn't a hostname or IP address (a URL such as
+  `https://app.example.workers.dev`, used only as a `base test` target)
+  now fails `start()` with an error naming the setting.
+
+    **Migration:** check the `host` in the run config each deployed Node
+    worker uses (`RUN_CONFIG`, or `@default` when unset — the case for
+    containers). The scaffold template sets `host: 'localhost'` there,
+    which now binds loopback only: a container or any Node worker that
+    must be reachable from other machines needs `host: '0.0.0.0'` or no
+    `host`. A local-only service can now use `host: '127.0.0.1'`.
+
+### Added
+
+- **Node: `BaseWorkerNodeRunner.stop()`** stops accepting connections and
+  resolves once the server has closed.
+
+### Fixed
+
+- **Node: `BaseWorkerNodeRunner.start()` rejects when the server can't
+  bind.** A port already in use (`EADDRINUSE`) or an address the machine
+  doesn't have surfaced as an unhandled `'error'` event while `start()`
+  resolved; `start()` now resolves only once the server is listening. The
+  startup log prints the address actually bound instead of always
+  `127.0.0.1`.
+
 ## [1.1.2] - 2026-11-02
 
 ### Security

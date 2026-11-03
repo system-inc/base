@@ -22,6 +22,8 @@ Options you'll actually use:
 
 HTTPS and a custom host come from settings too: `server: { '@default': { protocol: 'https', keyPath, certificatePath, host } }`.
 
+**`host` is the address the server binds to** on both platforms: `wrangler dev` gets it as `--ip`, and the Node runner listens on it. A Node worker with no `host` listens on every interface. Use `'127.0.0.1'` to keep a Node service reachable only from the same machine, and point its clients at `127.0.0.1` too, not `localhost`: `localhost` can resolve to `::1` and fail to connect. Use `'0.0.0.0'` (or no `host`) for anything that must be reachable from elsewhere, such as a container.
+
 ## `base check`: Validate before you run
 
 ```bash

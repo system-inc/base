@@ -38,9 +38,18 @@ interface SharedServerSettings {
     inspectorPort?: number;
 
     /**
-     * The host to bind to for local development.
+     * The hostname or IP address the server binds to: passed to
+     * `wrangler dev` as `--ip`, and to `listen()` by the Node runner (a
+     * deployed Node worker or container included). `base test` also uses
+     * it to derive the integration test host.
      *
-     * @default 'localhost'
+     * Bind a Node worker that must be reachable from other machines or from
+     * outside its container to `'0.0.0.0'` (or leave `host` unset). Bind a
+     * local-only service to `'127.0.0.1'`, and point its clients at that
+     * same literal address: a client configured with `localhost` may
+     * resolve it to `::1` and fail to connect.
+     *
+     * @default 'localhost' under `wrangler dev`; every interface on Node
      */
     host?: string;
 
