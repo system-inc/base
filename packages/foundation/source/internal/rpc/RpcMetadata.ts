@@ -16,6 +16,12 @@ export interface RpcArgumentMetadata {
 
 export interface RpcHandlerMetadata {
     handlerName: string;
+    /**
+     * Set by `@Rpc()` / `@WebSocketRpc()`: the method is a declared
+     * procedure. `@RpcArgument` alone records argument metadata but never
+     * makes a method callable.
+     */
+    declared: boolean;
     returnType?: TypeFunc;
     args: Record<number, RpcArgumentMetadata | undefined>;
     options?: RpcOptions;
@@ -37,8 +43,6 @@ export interface RpcServiceMetadata {
  * Automatic GC when the class is unloaded (workers, tests, etc.).
  */
 const META = new WeakMap<Constructor, RpcServiceMetadata>();
-
-const HANDLER_LOOKUP = new Map<string, RpcServiceMetadata>();
 
 /**
  * Metadata for defining a RPC service class.
@@ -84,8 +88,26 @@ export interface AddRpcHandlerMetadata {
 }
 
 /**
- * Adds metadata for a remote procedure handler.
- * This is used to register a method as a remote procedure handler.
+ * Returns the method's handler metadata, creating an undeclared entry when
+ * none exists yet. Parameter decorators run before the method decorator,
+ * so `@RpcArgument` usually creates the entry that `@Rpc()` then declares.
+ */
+function rpcMetadataGetOrCreateHandler(
+    serviceCtor: Constructor,
+    handlerName: string,
+): RpcHandlerMetadata {
+    const rpcMetadata = rpcMetadataAddService({ serviceCtor });
+    let rpcProcedure = rpcMetadata.procedures[handlerName];
+    if (!rpcProcedure) {
+        rpcProcedure = { handlerName, declared: false, args: {} };
+        rpcMetadata.procedures[handlerName] = rpcProcedure;
+    }
+    return rpcProcedure;
+}
+
+/**
+ * Declares a method as a remote procedure handler. Called by `@Rpc()` and
+ * `@WebSocketRpc()`; only declared handlers are callable.
  *
  * @param procedureMetadata
  * @returns
@@ -93,30 +115,14 @@ export interface AddRpcHandlerMetadata {
 export function rpcMetadataAddHandler(
     procedureMetadata: AddRpcHandlerMetadata,
 ): RpcHandlerMetadata {
-    const rpcMetadata = rpcMetadataAddService({
-        serviceCtor: procedureMetadata.serviceCtor,
-    });
-
-    let rpcProcedure = rpcMetadata.procedures[procedureMetadata.handlerName];
-    if (!rpcProcedure) {
-        rpcProcedure = {
-            handlerName: procedureMetadata.handlerName,
-            returnType: procedureMetadata.returnType,
-            args: {},
-            options: procedureMetadata.options,
-            webSocket: procedureMetadata.webSocket,
-        };
-        rpcMetadata.procedures[procedureMetadata.handlerName] = rpcProcedure;
-    } else {
-        rpcProcedure.returnType = procedureMetadata.returnType;
-        rpcProcedure.options = procedureMetadata.options;
-        rpcProcedure.webSocket = procedureMetadata.webSocket;
-    }
-
-    if (!HANDLER_LOOKUP.has(procedureMetadata.handlerName)) {
-        HANDLER_LOOKUP.set(procedureMetadata.handlerName, rpcMetadata);
-    }
-
+    const rpcProcedure = rpcMetadataGetOrCreateHandler(
+        procedureMetadata.serviceCtor,
+        procedureMetadata.handlerName,
+    );
+    rpcProcedure.declared = true;
+    rpcProcedure.returnType = procedureMetadata.returnType;
+    rpcProcedure.options = procedureMetadata.options;
+    rpcProcedure.webSocket = procedureMetadata.webSocket;
     return rpcProcedure;
 }
 
@@ -132,12 +138,12 @@ export interface AddRpcArgumentMetadata {
 }
 
 export function rpcMetadataAddArgument(paramMeta: AddRpcArgumentMetadata) {
-    const rpcProcedure = rpcMetadataAddHandler({
-        serviceCtor: paramMeta.serviceCtor,
-        handlerName: paramMeta.handler,
-    });
+    const rpcProcedure = rpcMetadataGetOrCreateHandler(
+        paramMeta.serviceCtor,
+        paramMeta.handler,
+    );
 
-    let rpcParameter = rpcProcedure?.args[paramMeta.index];
+    let rpcParameter = rpcProcedure.args[paramMeta.index];
     if (rpcParameter) {
         // If the parameter already exists, we can skip adding it again
         // This can happen in HMR or tests where the file is re-evaluated
@@ -158,8 +164,43 @@ export function rpcMetadataGetService(
     return META.get(serviceCtor);
 }
 
-export function rpcMetadataGet(
-    procedureName: string,
-): RpcServiceMetadata | undefined {
-    return HANDLER_LOOKUP.get(procedureName);
+/**
+ * A declared procedure and the service that declares it.
+ */
+export interface RpcProcedureEntry {
+    readonly service: RpcServiceMetadata;
+    readonly procedure: RpcHandlerMetadata;
+}
+
+/**
+ * Indexes the declared procedures of the given (registered) services by
+ * procedure name. Services that are decorated but not registered are never
+ * consulted, so they can't shadow a registered procedure.
+ *
+ * Throws when two services declare the same procedure name: the BaseRPC
+ * wire format names only the procedure, so such a call would be ambiguous.
+ */
+export function rpcMetadataIndexProcedures(
+    services: ReadonlyArray<Constructor<object>>,
+): ReadonlyMap<string, RpcProcedureEntry> {
+    const index = new Map<string, RpcProcedureEntry>();
+    for (const serviceCtor of new Set(services)) {
+        const service = META.get(serviceCtor);
+        if (!service) {
+            continue;
+        }
+        for (const procedure of Object.values(service.procedures)) {
+            if (!procedure?.declared) {
+                continue;
+            }
+            const existing = index.get(procedure.handlerName);
+            if (existing) {
+                throw new Error(
+                    `RPC procedure "${procedure.handlerName}" is declared by both ${existing.service.serviceCtor.name} and ${serviceCtor.name}. RPC calls name only the procedure, so procedure names must be unique across a worker's registered RPC services — rename one of them.`,
+                );
+            }
+            index.set(procedure.handlerName, { service, procedure });
+        }
+    }
+    return index;
 }

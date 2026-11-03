@@ -19,6 +19,7 @@ import {
 import {
     isRpcFailureResponse,
     RpcFailure,
+    RpcResult,
     RpcSuccess,
 } from '@system-inc/base-common/rpc/protocol/RpcResponse';
 import { BaseHandler } from '@system-inc/base-common/type/BaseHandler';
@@ -58,7 +59,8 @@ import { RequestTimings } from '../request/RequestTimings';
 import {
     RpcArgumentMetadata,
     RpcHandlerMetadata,
-    rpcMetadataGet,
+    rpcMetadataIndexProcedures,
+    RpcProcedureEntry,
     RpcServiceMetadata,
 } from './RpcMetadata';
 
@@ -69,7 +71,7 @@ import {
 export class RpcDispatcher {
     private readonly visibility: RpcVisibility;
     private readonly allowedWorkers: string[];
-    private readonly services: ReadonlyArray<Constructor<object>>;
+    private readonly procedures: ReadonlyMap<string, RpcProcedureEntry>;
 
     constructor(
         private readonly runtime: Runtime,
@@ -79,13 +81,30 @@ export class RpcDispatcher {
             ? 'public'
             : (configuration.visibility ?? 'internal');
         this.allowedWorkers = configuration.allowedWorkers ?? [];
-        this.services = configuration.procedures ?? [];
+        // only the procedures of services registered in settings are
+        // callable — a decorated but unregistered service is never consulted
+        this.procedures = rpcMetadataIndexProcedures(
+            configuration.procedures ?? [],
+        );
     }
 
     async handleRequest(request: BaseRequest): Promise<Response> {
-        // get the RPC and run it
         const rpc = await this.getRpc(request);
+        return Response.json(await this.dispatch(rpc, request));
+    }
 
+    /**
+     * Dispatches one decoded call: lookup, visibility, handler middleware
+     * (access control first), argument deserialization + validation, the
+     * invocation, and result serialization. Shared by every surface that
+     * runs RPC procedures, so each gets identical enforcement.
+     *
+     * A session-access denial is thrown (a `BaseError` carrying
+     * `AUTHENTICATION_REQUIRED`, `PERMISSION_DENIED`, or
+     * `INSUFFICIENT_ENTITLEMENTS`), as on every dispatch surface; any other
+     * handler-middleware short-circuit resolves to a `NOT_ALLOWED` failure.
+     */
+    async dispatch(rpc: RpcCall, request: BaseRequest): Promise<RpcResult> {
         // set the rpc operation on the request
         request.context.rpc = rpc.procedure;
 
@@ -99,16 +118,18 @@ export class RpcDispatcher {
             request.context.set(WebSocketInfoRequestContextKey, rpc.meta);
         }
 
-        // get the RPC metadata
-        const serviceMetadata = rpcMetadataGet(rpc.procedure);
-        if (!serviceMetadata) {
+        // find the declared procedure among the registered services
+        const entry = this.procedures.get(rpc.procedure);
+        if (!entry) {
             Logger.warn(
                 LogCategory.Rpc,
-                'RPC procedure %s not found in metadata.',
+                'RPC procedure %s not found in the registered services.',
                 rpc.procedure,
             );
-            return Response.json(rpcErrorNotFound(rpc));
+            return rpcErrorNotFound(rpc);
         }
+        const { service: serviceMetadata, procedure: procedureMetadata } =
+            entry;
 
         // verify the procedure visibility
         const visibilityResult = this.verifyProcedureVisibility(
@@ -118,30 +139,7 @@ export class RpcDispatcher {
         );
         // if the visibility check failed, return the error
         if (isRpcFailureResponse(visibilityResult)) {
-            return Response.json(visibilityResult);
-        }
-
-        // only allow the RPC if it is in the list of services set in settings
-        // this makes it so even if an RPC is defined, it won't be callable unless it is in the list
-        if (!this.services.includes(serviceMetadata.serviceCtor)) {
-            Logger.warn(
-                LogCategory.Rpc,
-                'RPC service %s not found for procedure %s.',
-                serviceMetadata.serviceCtor.name,
-                rpc.procedure,
-            );
-            return Response.json(rpcErrorNotFound(rpc));
-        }
-
-        const procedureMetadata = serviceMetadata.procedures[rpc.procedure];
-        if (!procedureMetadata) {
-            Logger.warn(
-                LogCategory.Rpc,
-                'RPC procedure %s not found in service metadata %s.',
-                rpc.procedure,
-                serviceMetadata.serviceCtor.name,
-            );
-            return Response.json(rpcErrorNotFound(rpc));
+            return visibilityResult;
         }
 
         // run the procedure; handler middleware runs inside runRemoteProcedure
@@ -155,7 +153,7 @@ export class RpcDispatcher {
 
         // do not continue if the result is an error
         if (isRpcFailureResponse(rpcResult)) {
-            return Response.json(rpcResult);
+            return rpcResult;
         }
 
         // if we have a return type, we need to run the
@@ -170,7 +168,7 @@ export class RpcDispatcher {
 
         request.context.stopWatch.split(RequestTimings.Handler);
 
-        return Response.json({
+        return {
             type: 'response',
             status: 'success',
             id: rpc.id,
@@ -180,7 +178,7 @@ export class RpcDispatcher {
             durationMs: request.context.stopWatch.getElapsedTimeToSplit(
                 RequestTimings.Handler,
             ),
-        } satisfies RpcSuccess);
+        } satisfies RpcSuccess;
     }
 
     private async getRpc(request: BaseRequest): Promise<RpcCall> {
