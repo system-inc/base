@@ -47,7 +47,7 @@ export type JsonSchemaSource = TypeFunc | Constructor | EnumLike;
  */
 export function generateJsonSchema(type: JsonSchemaSource): JsonSchema {
     const builder = new JsonSchemaBuilder();
-    const root = rootClass(type);
+    const root = jsonSchemaRootClass(type);
     return builder.document(
         root ? builder.objectSchemaFor(root) : builder.schemaFor(type),
     );
@@ -193,10 +193,13 @@ export class JsonSchemaBuilder {
 }
 
 /**
- * The serializable class a root type names directly (not in an array), so
- * the document can inline it.
+ * The serializable class a type names directly (not in an array or enum) —
+ * the class {@link generateJsonSchema} inlines at the document root, whose
+ * fields are then the root object's properties.
  */
-function rootClass(type: JsonSchemaSource): Constructor | undefined {
+export function jsonSchemaRootClass(
+    type: JsonSchemaSource,
+): Constructor | undefined {
     if (isEnumLike(type)) {
         return undefined;
     }

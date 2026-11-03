@@ -14,6 +14,7 @@ import { BaseEvent } from '../event/BaseEvent';
 import { BaseEventListener } from '../event/BaseEventListener';
 import { GqlSettings } from '../graphql/GqlSettings';
 import { LoggingSettings } from '../logging/LoggingSettings';
+import { DefaultMcpEndpoint, McpSettings } from '../mcp/McpSettings';
 import { ModuleSettings } from '../module/ModuleSettings';
 import { OrmAdapterType } from '../orm/database/adapter/OrmAdapterType';
 import { OrmEntityClass } from '../orm/entity/OrmEntityClass';
@@ -225,6 +226,19 @@ export class BaseConfiguration {
             allowedWorkers: this._settings.rpc?.service?.allowedWorkers ?? [],
             visibility: this._settings.rpc?.service?.visibility ?? 'internal',
             procedures: this.getManifest().rpc.services,
+        };
+    }
+
+    get mcp(): McpConfiguration | undefined {
+        const settings = this._settings.mcp;
+        if (!settings) {
+            return undefined;
+        }
+        return {
+            route: settings.route ?? DefaultMcpEndpoint,
+            instructions: settings.instructions,
+            allowedOrigins: settings.allowedOrigins ?? [],
+            allowedHosts: settings.allowedHosts,
         };
     }
 
@@ -483,6 +497,14 @@ export type GqlConfiguration = Required<
 export type RpcServerConfiguration = Required<RpcServiceSettings> & {
     readonly procedures: Constructor<object>[];
 };
+
+/**
+ * Runtime MCP endpoint configuration: the MCP settings with defaults applied.
+ */
+export type McpConfiguration = Required<
+    Pick<McpSettings, 'route' | 'allowedOrigins'>
+> &
+    Pick<McpSettings, 'instructions' | 'allowedHosts'>;
 
 export interface WorkerQueueConfiguration extends WorkerQueueSettings {
     readonly processors: Constructor<WorkerQueueProcessorInterface>[];

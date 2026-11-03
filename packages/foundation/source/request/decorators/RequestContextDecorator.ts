@@ -109,6 +109,28 @@ export function InjectRequestContext<T>(
 }
 
 /**
+ * The parameter indices of a method that `@InjectRequestContext()` fills —
+ * the whole context or an extracted key — rather than the caller.
+ */
+export function requestContextParamIndices(
+    prototype: object,
+    methodName: string | symbol,
+): Set<number> {
+    const contextIndices: number[] | undefined = Reflect.getMetadata(
+        REQUEST_CONTEXT_METADATA_KEY,
+        prototype,
+        methodName,
+    );
+    const extractions: Map<number, RequestContextKey<unknown>> | undefined =
+        Reflect.getMetadata(
+            REQUEST_CONTEXT_EXTRACTIONS_KEY,
+            prototype,
+            methodName,
+        );
+    return new Set([...(contextIndices ?? []), ...(extractions?.keys() ?? [])]);
+}
+
+/**
  * Resolves all `@InjectRequestContext()` decorated parameters for a method.
  * Call this from dispatch sites (Router, RpcDispatcher, GqlDispatcher/TypeGraphQL)
  * to populate the args array with RequestContext data.

@@ -37,6 +37,7 @@ import { OrmDatabaseTestService } from './source/services/OrmDatabaseTestService
 import { OrmRepositoryTestService } from './source/services/OrmRepositoryTestService';
 import { RouterTestService } from './source/services/RouterTestService';
 import { RpcTestService } from './source/services/RpcTestService';
+import { ToolsRpc } from './source/services/ToolsRpc';
 
 const ormEntities = [
     OrmTestEntity,
@@ -98,6 +99,7 @@ export const TestWorkerSettings: BaseSettings = {
         OrmRepositoryTestService,
         OrmDatabaseTestService,
         RpcTestService,
+        ToolsRpc,
         TestScheduledExecutable,
         TestScheduledExecutable1,
         TestWorkerProviders,
@@ -120,6 +122,9 @@ export const TestWorkerSettings: BaseSettings = {
         service: {
             visibility: 'public',
         },
+    },
+    mcp: {
+        instructions: 'Tools for exercising the MCP endpoint in tests.',
     },
     accessControl: {
         // The worker's one identity seam — the reference implementation

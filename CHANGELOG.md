@@ -46,6 +46,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **MCP: RPC procedures as Model Context Protocol tools.** Mark a
+  procedure with `@Rpc({ mcp: { description, name?, title?, annotations? } })`
+  and set `BaseSettings.mcp` to serve its tools on `/mcp`, over MCP's
+  Streamable HTTP transport (stateless, JSON responses), on Cloudflare and
+  Node.
+    - Calls run through the RPC dispatcher, so visibility, access control
+      (before arguments are read), validation and request-scoped DI apply
+      unchanged.
+    - `tools/list` is filtered by each caller's session access, and a
+      hidden tool answers exactly as an unknown one does.
+    - Input schemas are generated from serialization and validation
+      metadata. Validation failures come back as tool errors the model can
+      read.
+    - Browser origins must be on `allowedOrigins`; `allowedHosts` can
+      restrict the `Host` header too.
+    - Boot fails, naming the procedure, on a blank description, a
+      procedure that isn't `'public'`, an invalid or duplicate tool name,
+      or arguments the tool can't describe.
+- **Access control: rejected credentials can be told apart from anonymous
+  callers.** A `SessionContextProvider` that throws `HttpErrors.unauthorized()`
+  for credentials it rejects makes the MCP endpoint answer HTTP 401. Returning
+  `null` still means anonymous.
 - **Serialization: JSON Schema generation.** `generateJsonSchema(type)`
   (`serialization/GenerateJsonSchema`) returns a draft 2020-12 schema for
   any type `deserialize` accepts. Structure (wire names, types, `required`,

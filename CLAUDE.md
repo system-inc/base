@@ -46,7 +46,7 @@ DI is a scope hierarchy `@global → @worker → {@request | @queue | @scheduled
 3. [`base/`](./packages/foundation/source/base/CLAUDE.md) — boot + dispatch lifecycle.
 4. [`configuration/`](./packages/foundation/source/configuration/CLAUDE.md) — `BaseConfiguration`, the manifest, decorator validation.
 5. [`dependency-injection/`](./packages/foundation/source/dependency-injection/CLAUDE.md) — scopes, inject decorators, typed tokens.
-6. Then the subsystem you're touching — [orm](./packages/foundation/source/orm/CLAUDE.md), [graphql](./packages/foundation/source/graphql/CLAUDE.md), [rpc](./packages/foundation/source/rpc/CLAUDE.md), [router/http](./packages/foundation/source/router/CLAUDE.md), [queue](./packages/foundation/source/queue/CLAUDE.md), [scheduled](./packages/foundation/source/scheduled/CLAUDE.md), [web-socket](./packages/foundation/source/web-socket/CLAUDE.md), [access-control](./packages/foundation/source/access-control/CLAUDE.md), …
+6. Then the subsystem you're touching — [orm](./packages/foundation/source/orm/CLAUDE.md), [graphql](./packages/foundation/source/graphql/CLAUDE.md), [rpc](./packages/foundation/source/rpc/CLAUDE.md), [mcp](./packages/foundation/source/mcp/CLAUDE.md), [router/http](./packages/foundation/source/router/CLAUDE.md), [queue](./packages/foundation/source/queue/CLAUDE.md), [scheduled](./packages/foundation/source/scheduled/CLAUDE.md), [web-socket](./packages/foundation/source/web-socket/CLAUDE.md), [access-control](./packages/foundation/source/access-control/CLAUDE.md), …
 
 ## Repository layout
 

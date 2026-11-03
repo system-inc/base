@@ -4,7 +4,7 @@ The read-only, injectable view of a worker's configuration. `BaseConfiguration` 
 
 ## `BaseConfiguration`
 
-Constructed by `BaseWorkerContext` from `(environmentVariables, settings)` and registered in the `@worker` container, so any service can `@Inject(BaseConfiguration)`. It is **read-only** — a typed projection over settings, not a place to mutate state. Key getters: `name`, `title`, `version`, `runtime`, `delegate`, `modules`, `router`, `graphql`, `rpcClient`, `rpcServer`, `scheduled`, `eventBus`, `logging` (settings default + `categories` + the `LOG_LEVEL` env directive + `requestLog` with its default applied; `Base.initializeLogging` applies it at boot), `keyValueStorage`, `objectStore`, `queue`, `durableObjects`, `containers`, `webSocket`, `middleware`, `cli`. `instanceId` is a per-instance uuid.
+Constructed by `BaseWorkerContext` from `(environmentVariables, settings)` and registered in the `@worker` container, so any service can `@Inject(BaseConfiguration)`. It is **read-only** — a typed projection over settings, not a place to mutate state. Key getters: `name`, `title`, `version`, `runtime`, `delegate`, `modules`, `router`, `graphql`, `rpcClient`, `rpcServer`, `mcp`, `scheduled`, `eventBus`, `logging` (settings default + `categories` + the `LOG_LEVEL` env directive + `requestLog` with its default applied; `Base.initializeLogging` applies it at boot), `keyValueStorage`, `objectStore`, `queue`, `durableObjects`, `containers`, `webSocket`, `middleware`, `cli`. `instanceId` is a per-instance uuid.
 
 ### Environment variables are not exposed directly
 

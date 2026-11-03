@@ -26,6 +26,7 @@ export const LogCategory = {
      * RPC dispatch (and the client's calling path).
      */
     Rpc: 'rpc',
+    Mcp: 'mcp',
 
     /**
      * GraphQL schema and dispatch.
